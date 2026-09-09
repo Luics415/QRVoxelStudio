@@ -155,7 +155,7 @@ export default function Home() {
   const [exportBusy, setExportBusy] = useState<"video" | "gif" | "image" | null>(null);
 
   const hasActualQR = slot.qrMatrix.length > 0;
-  const displayMatrix = hasActualQR ? slot.qrMatrix : DEMO_MATRIX;
+  const displayMatrix = hasActualQR ? slot.qrMatrix : DEMO_MATRIX.map((row) => row.map((value) => (value ? 1 : 0)));
   const activeModules = useMemo(
     () => displayMatrix.reduce((total, row) => total + row.reduce((rowTotal, value) => rowTotal + (value ? 1 : 0), 0), 0),
     [displayMatrix],
