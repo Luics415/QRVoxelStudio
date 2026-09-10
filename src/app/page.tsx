@@ -154,7 +154,7 @@ export default function Home() {
   const [dragActive, setDragActive] = useState(false);
   const [weatherLabel, setWeatherLabel] = useState("Claro suave");
   const [shareFeedback, setShareFeedback] = useState("");
-  const [shareSidebarOpen, setShareSidebarOpen] = useState(true);
+  const [shareSidebarOpen, setShareSidebarOpen] = useState(false);
   const [welcomeVisible, setWelcomeVisible] = useState(true);
   const [exportBusy, setExportBusy] = useState<"video" | "gif" | "image" | null>(null);
   const [seasonTransitioning, setSeasonTransitioning] = useState(false);
@@ -189,7 +189,9 @@ export default function Home() {
     const compactMedia = window.matchMedia("(max-width: 820px), (pointer: coarse)");
     const updateCompactMode = () => {
       compactUiRef.current = compactMedia.matches;
-      if (compactMedia.matches) setShareSidebarOpen(false);
+      // On phones/tablets the share panel must never cover the first view.
+      // Desktop keeps the expanded sharing panel as part of the workspace.
+      setShareSidebarOpen(!compactMedia.matches);
     };
     updateCompactMode();
     compactMedia.addEventListener?.("change", updateCompactMode);
