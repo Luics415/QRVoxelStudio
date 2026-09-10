@@ -1,6 +1,6 @@
 import type { QRMatrix, VisualProfile } from "@/models/qr-slot";
 
-export interface SharedGardenPayload {
+export interface SharedGardenPayloadV1 {
   version: 1;
   fileName: string;
   decodedContent: string | null;
@@ -9,9 +9,16 @@ export interface SharedGardenPayload {
   theme: VisualProfile["theme"];
 }
 
-function matrixToBits(matrix: QRMatrix) {
-  return matrix.map((row) => row.map((value) => (value ? "1" : "0")).join("")).join("");
+export interface SharedGardenPayloadV2 {
+  version: 2;
+  fileName: string;
+  decodedContent: string | null;
+  matrixSize: number;
+  matrixData: string;
+  theme: VisualProfile["theme"];
 }
+
+export type SharedGardenPayload = SharedGardenPayloadV1 | SharedGardenPayloadV2;
 
 function bitsToMatrix(bits: string, size: number): QRMatrix {
   if (!Number.isInteger(size) || size <= 0 || bits.length !== size * size) {
@@ -41,18 +48,64 @@ function base64UrlToBytes(value: string) {
   return bytes;
 }
 
+function packMatrix(matrix: QRMatrix) {
+  const size = matrix.length;
+  const totalBits = size * size;
+  const bytes = new Uint8Array(Math.ceil(totalBits / 8));
+  let bitIndex = 0;
+
+  for (let row = 0; row < size; row += 1) {
+    for (let col = 0; col < size; col += 1) {
+      if (matrix[row]?.[col]) {
+        const byteIndex = Math.floor(bitIndex / 8);
+        const shift = 7 - (bitIndex % 8);
+        bytes[byteIndex] |= 1 << shift;
+      }
+      bitIndex += 1;
+    }
+  }
+
+  return bytesToBase64Url(bytes);
+}
+
+function unpackMatrix(encoded: string, size: number): QRMatrix {
+  if (!Number.isInteger(size) || size <= 0) {
+    throw new Error("El enlace compartido contiene una matriz QR inválida.");
+  }
+
+  const bytes = base64UrlToBytes(encoded);
+  const requiredBytes = Math.ceil((size * size) / 8);
+  if (bytes.length !== requiredBytes) {
+    throw new Error("El enlace compartido contiene datos QR incompletos.");
+  }
+
+  const matrix: QRMatrix = [];
+  let bitIndex = 0;
+  for (let row = 0; row < size; row += 1) {
+    const outputRow: Array<0 | 1> = [];
+    for (let col = 0; col < size; col += 1) {
+      const byteIndex = Math.floor(bitIndex / 8);
+      const shift = 7 - (bitIndex % 8);
+      outputRow.push(((bytes[byteIndex] >> shift) & 1) === 1 ? 1 : 0);
+      bitIndex += 1;
+    }
+    matrix.push(outputRow);
+  }
+  return matrix;
+}
+
 export function createSharedGardenPayload(input: {
   matrix: QRMatrix;
   fileName: string;
   decodedContent: string | null;
   theme: VisualProfile["theme"];
-}): SharedGardenPayload {
+}): SharedGardenPayloadV2 {
   return {
-    version: 1,
+    version: 2,
     fileName: input.fileName,
     decodedContent: input.decodedContent,
     matrixSize: input.matrix.length,
-    matrixBits: matrixToBits(input.matrix),
+    matrixData: packMatrix(input.matrix),
     theme: input.theme,
   };
 }
@@ -65,9 +118,18 @@ export function encodeSharedGarden(payload: SharedGardenPayload) {
 export function decodeSharedGarden(encoded: string) {
   const json = new TextDecoder().decode(base64UrlToBytes(encoded));
   const payload = JSON.parse(json) as SharedGardenPayload;
-  if (payload.version !== 1) throw new Error("Esta versión de jardín compartido todavía no es compatible.");
-  const matrix = bitsToMatrix(payload.matrixBits, payload.matrixSize);
-  return { payload, matrix };
+
+  if (payload.version === 1) {
+    const matrix = bitsToMatrix(payload.matrixBits, payload.matrixSize);
+    return { payload, matrix };
+  }
+
+  if (payload.version === 2) {
+    const matrix = unpackMatrix(payload.matrixData, payload.matrixSize);
+    return { payload, matrix };
+  }
+
+  throw new Error("Esta versión de jardín compartido todavía no es compatible.");
 }
 
 export function makeShareUrl(origin: string, payload: SharedGardenPayload, basePath = "") {

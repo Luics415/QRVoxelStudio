@@ -180,3 +180,35 @@ En pantallas de teléfono:
 - la escena ocupa la mayor parte del viewport;
 - el render 3D limita el DPR máximo para reducir carga de GPU;
 - GIF reduce tamaño y frecuencia de cuadros automáticamente.
+
+## v0.18 — Branding aprobado, video de vista previa y modelo de almacenamiento
+
+### Branding
+
+Los recursos aprobados quedan dentro de `public/brand/`:
+
+- `qr-voxel-studio-icon.png`: icono circular de ancla.
+- `luics415-signature.png`: firma/banner visual Luics415 con temática QR Voxel Studio.
+- `qr-voxel-studio-social.png`: versión 1200 × 630 preparada para Open Graph / WhatsApp y otras vistas sociales.
+
+El icono también se genera como `src/app/icon.png` y `src/app/apple-icon.png`, y `public/anchor-studio.png` usa la misma versión centrada para el encabezado y la bienvenida.
+
+### Vista previa de video en Compartir
+
+La tarjeta de video de **Compartir tu jardín** ya no es decorativa. Al pulsarla después de cargar un QR:
+
+1. reproduce una secuencia corta del jardín;
+2. captura el canvas mediante `MediaRecorder`;
+3. crea el video en memoria;
+4. lo inserta dentro del propio panel como reproductor con controles, autoplay, loop y `playsInline`;
+5. permite regenerarlo cuando cambie el QR.
+
+La creación es bajo demanda para no sacrificar el rendimiento normal del jardín, especialmente en teléfonos.
+
+### Dónde se guardan los QR
+
+La versión actual no utiliza base de datos ni sube el QR a GitHub. El archivo que adjunta el usuario se procesa en su propio navegador. El enlace compartido contiene una representación compacta de la matriz QR, el contenido decodificado, el nombre y la estación; `/share/` reconstruye el jardín a partir de esos datos.
+
+A partir de v0.18 la matriz se empaqueta en bits antes de serializarse, reduciendo mucho el tamaño del enlace y manteniendo compatibilidad con enlaces de la versión anterior.
+
+Por esta arquitectura no existe una acumulación central de 1000 QR que haya que limpiar. Si en el futuro se añade una **Galería/Historial**, la recomendación para GitHub Pages es guardar solo un historial local en IndexedDB con `expiresAt` de 7 días y purgarlo al abrir la aplicación. Un almacenamiento central con expiración semanal solo sería necesario para URLs cortas, historial entre dispositivos o una galería pública; eso requeriría un servicio externo como Supabase/Firebase/Cloudflare, porque GitHub Pages es estático.

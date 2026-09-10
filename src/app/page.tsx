@@ -148,6 +148,7 @@ export default function Home() {
   const seasonTimersRef = useRef<number[]>([]);
   const progressUiStampRef = useRef(0);
   const compactUiRef = useRef(false);
+  const previewVideoUrlRef = useRef("");
   const [targetView, setTargetView] = useState<"forest" | "qr">("forest");
   const [progress, setProgress] = useState(0);
   const [dragActive, setDragActive] = useState(false);
@@ -158,6 +159,8 @@ export default function Home() {
   const [exportBusy, setExportBusy] = useState<"video" | "gif" | "image" | null>(null);
   const [seasonTransitioning, setSeasonTransitioning] = useState(false);
   const [seasonTransitionTarget, setSeasonTransitionTarget] = useState<VisualProfile["theme"] | null>(null);
+  const [previewVideoUrl, setPreviewVideoUrl] = useState("");
+  const [previewVideoBusy, setPreviewVideoBusy] = useState(false);
 
   const hasActualQR = slot.qrMatrix.length > 0;
   const sceneMatrix = hasActualQR ? slot.qrMatrix : [];
@@ -234,6 +237,7 @@ export default function Home() {
     return () => {
       timersRef.current.forEach((timer) => window.clearTimeout(timer));
       seasonTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+      if (previewVideoUrlRef.current) URL.revokeObjectURL(previewVideoUrlRef.current);
     };
   }, []);
 
@@ -244,6 +248,15 @@ export default function Home() {
     seasonTimersRef.current = [];
     setSeasonTransitioning(false);
     setSeasonTransitionTarget(null);
+  };
+
+
+  const clearPreviewVideo = () => {
+    if (previewVideoUrlRef.current) {
+      URL.revokeObjectURL(previewVideoUrlRef.current);
+      previewVideoUrlRef.current = "";
+    }
+    setPreviewVideoUrl("");
   };
 
   const handleThemeChange = (theme: VisualProfile["theme"]) => {
@@ -266,26 +279,46 @@ export default function Home() {
     if (!file) return;
     clearShowcaseTimers();
     setShareFeedback("");
+    clearPreviewVideo();
     progressRef.current = 0;
     setProgress(0);
     setTargetView("forest");
     await replaceQR(file);
   };
 
-  const playShowcase = () => {
-    if (!hasActualQR) {
-      setShareFeedback("Adjunta un QR para desbloquear la reproducción y la vista desde arriba.");
+
+  const createPreviewVideo = async () => {
+    if (!hasActualQR || previewVideoBusy || exportBusy !== null) {
+      if (!hasActualQR) setShareFeedback("Adjunta un QR para crear la vista previa de video.");
       return;
     }
-    clearShowcaseTimers();
-    setTargetView("forest");
-    setShareFeedback("Reproduciendo la transición del jardín.");
 
-    timersRef.current.push(
-      window.setTimeout(() => setTargetView("qr"), 1450),
-      window.setTimeout(() => setTargetView("forest"), 6100),
-      window.setTimeout(() => setShareFeedback(""), 5000),
-    );
+    const canvas = getSceneCanvas();
+    if (!canvas) {
+      setShareFeedback("La escena todavía no está lista para crear la vista previa.");
+      return;
+    }
+
+    setPreviewVideoBusy(true);
+    setShareFeedback("Preparando vista previa animada…");
+    clearPreviewVideo();
+
+    try {
+      const duration = runExportSequence("gif");
+      const result = await recordSceneVideo(canvas, duration, compactUiRef.current ? 18 : 24);
+      const url = URL.createObjectURL(result.blob);
+      previewVideoUrlRef.current = url;
+      setPreviewVideoUrl(url);
+      setShareFeedback("Vista previa lista. Puedes reproducirla dentro del panel.");
+    } catch (cause) {
+      setShareFeedback(cause instanceof Error ? cause.message : "No pudimos crear la vista previa de video.");
+    } finally {
+      setPreviewVideoBusy(false);
+      window.setTimeout(() => {
+        clearShowcaseTimers();
+        setTargetView("forest");
+      }, 250);
+    }
   };
 
   const buildShareUrl = () => {
@@ -535,16 +568,42 @@ export default function Home() {
               </button>
             </div>
 
-            <button type="button" className="v15MediaPreview" onClick={playShowcase} disabled={!hasActualQR}>
-              <div className="v15MediaBackdrop">
-                <div className="v15MediaSeasonDots">
-                  {THEMES.map((theme) => (
-                    <span key={`dot-${theme.value}`} style={{ background: theme.dot }} />
-                  ))}
-                </div>
-              </div>
-              <span className="v15PlayCircle"><PlayIcon /></span>
-            </button>
+            <div className={`v15MediaPreview ${previewVideoUrl ? "hasVideo" : ""}`}>
+              {previewVideoUrl ? (
+                <>
+                  <video
+                    className="v18PreviewVideo"
+                    src={previewVideoUrl}
+                    controls
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                  />
+                  <button type="button" className="v18RegeneratePreview" onClick={() => void createPreviewVideo()} disabled={previewVideoBusy || exportBusy !== null}>
+                    Regenerar
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="v18PreviewLauncher"
+                  onClick={() => void createPreviewVideo()}
+                  disabled={!hasActualQR || previewVideoBusy || exportBusy !== null}
+                >
+                  <div className="v15MediaBackdrop">
+                    <div className="v15MediaSeasonDots">
+                      {THEMES.map((theme) => (
+                        <span key={`dot-${theme.value}`} style={{ background: theme.dot }} />
+                      ))}
+                    </div>
+                  </div>
+                  <span className="v15PlayCircle"><PlayIcon /></span>
+                  <span className="v18PreviewLabel">{previewVideoBusy ? "Generando vista previa…" : hasActualQR ? "Crear vista previa animada" : "Adjunta un QR para habilitarla"}</span>
+                </button>
+              )}
+            </div>
 
             <div className="v15QuickPreview">
               <strong>Vista previa rápida</strong>
