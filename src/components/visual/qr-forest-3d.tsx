@@ -903,7 +903,7 @@ function SpringBlossomShower({ side, progress }: { side: number; progress: numbe
   const petal4Ref = useRef<InstancedMesh>(null);
   const centerRef = useRef<InstancedMesh>(null);
   const dummy = useMemo(() => new Object3D(), []);
-  const count = 34;
+  const count = 52;
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
@@ -916,22 +916,22 @@ function SpringBlossomShower({ side, progress }: { side: number; progress: numbe
 
     for (let i = 0; i < count; i += 1) {
       const seed = i + 1701;
-      const speed = 0.34 + hash(seed, 1) * 0.17;
+      const speed = 0.24 + hash(seed, 1) * 0.13;
       const fall = (t * speed + hash(seed, 2) * 7.5) % 7.5;
       const baseX = (hash(seed, 3) - 0.5) * side * 0.96;
       const baseZ = (hash(seed, 4) - 0.5) * side * 0.94;
-      const wind = Math.sin(t * 0.62 + seed * 0.37) * (0.28 + hash(seed, 5) * 0.32);
+      const wind = Math.sin(t * 0.62 + seed * 0.37) * (0.34 + hash(seed, 5) * 0.38);
       const curl = Math.cos(t * 0.48 + seed * 0.21) * (0.16 + hash(seed, 6) * 0.18);
       const cx = baseX + wind;
       const cy = 6.35 - fall + Math.sin(t * 1.12 + seed) * 0.1;
       const cz = baseZ + curl;
       const flowerRotation = t * (0.44 + hash(seed, 7) * 0.35) + seed * 0.4;
-      const bloomScale = 1.0 + hash(seed, 8) * 0.42;
+      const bloomScale = 1.16 + hash(seed, 8) * 0.58;
 
       refs.forEach((mesh, petalIndex) => {
         if (!mesh) return;
         const angle = flowerRotation + petalIndex * ((Math.PI * 2) / 5);
-        const radius = 0.15 * bloomScale;
+        const radius = 0.18 * bloomScale;
         const px = cx + Math.cos(angle) * radius;
         const pz = cz + Math.sin(angle) * radius;
         const flutter = Math.sin(t * 1.7 + seed + petalIndex) * 0.38;
@@ -940,11 +940,11 @@ function SpringBlossomShower({ side, progress }: { side: number; progress: numbe
           i,
           dummy,
           px,
-          cy + Math.sin(angle * 2) * 0.014,
+          cy + Math.sin(angle * 2) * 0.018,
           pz,
-          0.18 * bloomScale,
-          0.052 * bloomScale,
-          0.11 * bloomScale,
+          0.22 * bloomScale,
+          0.064 * bloomScale,
+          0.13 * bloomScale,
           angle,
           0.5 + flutter,
           flutter * 0.7,
@@ -989,9 +989,9 @@ function SpringBlossomShower({ side, progress }: { side: number; progress: numbe
           <meshStandardMaterial
             color={petalColors[index]}
             emissive={petalColors[index]}
-            emissiveIntensity={0.09}
+            emissiveIntensity={0.12}
             transparent
-            opacity={0.92}
+            opacity={0.96}
             roughness={0.58}
           />
         </instancedMesh>
@@ -1063,19 +1063,19 @@ function SeasonalScenery({ theme, side, progress }: { theme: VisualProfile["them
 
   const FlowerPatch = ({ x, z, scale = 1 }: { x: number; z: number; scale?: number }) => (
     <group position={[x, 0.028, z]} rotation={[0, (Math.abs(x * 0.02 + z * 0.01)) % Math.PI, 0]}>
-      {Array.from({ length: 13 }).map((_, index) => {
+      {Array.from({ length: 18 }).map((_, index) => {
         const seed = index + x * 0.13 + z * 0.09;
-        const px = Math.sin(seed * 2.1) * 0.95 * scale;
-        const pz = Math.cos(seed * 1.7) * 0.72 * scale;
+        const px = Math.sin(seed * 2.1) * 1.02 * scale;
+        const pz = Math.cos(seed * 1.7) * 0.82 * scale;
         const petalColor = index % 3 === 0 ? "#ffd9ef" : index % 3 === 1 ? "#f3a0cf" : "#fff1f8";
         return (
           <group key={`flower-${index}`} position={[px, (index % 2) * 0.015, pz]}>
             <mesh position={[0, 0.06, 0]} castShadow>
-              <boxGeometry args={[0.02, 0.12, 0.02]} />
+              <boxGeometry args={[0.024, 0.14, 0.024]} />
               <meshStandardMaterial color="#7ba857" roughness={0.78} />
             </mesh>
             <mesh position={[0, 0.12, 0]} castShadow>
-              <sphereGeometry args={[0.04, 8, 8]} />
+              <sphereGeometry args={[0.046, 10, 10]} />
               <meshStandardMaterial color="#f5d768" roughness={0.7} emissive="#fff3b1" emissiveIntensity={0.04} />
             </mesh>
             {Array.from({ length: 5 }).map((_, petalIndex) => {
@@ -1083,12 +1083,12 @@ function SeasonalScenery({ theme, side, progress }: { theme: VisualProfile["them
               return (
                 <mesh
                   key={`petal-${petalIndex}`}
-                  position={[Math.cos(petalAngle) * 0.058, 0.125, Math.sin(petalAngle) * 0.058]}
+                  position={[Math.cos(petalAngle) * 0.068, 0.13, Math.sin(petalAngle) * 0.068]}
                   rotation={[0.18, -petalAngle, Math.sin(petalAngle) * 0.18]}
-                  scale={[1.35, 0.5, 0.78]}
+                  scale={[1.55, 0.56, 0.9]}
                   castShadow
                 >
-                  <sphereGeometry args={[0.045, 8, 6]} />
+                  <sphereGeometry args={[0.052, 10, 8]} />
                   <meshStandardMaterial color={petalColor} roughness={0.58} emissive={petalColor} emissiveIntensity={0.07} />
                 </mesh>
               );

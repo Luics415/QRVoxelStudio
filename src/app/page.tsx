@@ -155,6 +155,7 @@ export default function Home() {
   const [exportBusy, setExportBusy] = useState<"video" | "gif" | "image" | null>(null);
 
   const hasActualQR = slot.qrMatrix.length > 0;
+  const sceneMatrix = hasActualQR ? slot.qrMatrix : [];
   const displayMatrix = hasActualQR ? slot.qrMatrix : DEMO_MATRIX.map((row) => row.map((value) => (value ? 1 : 0)));
   const activeModules = useMemo(
     () => displayMatrix.reduce((total, row) => total + row.reduce((rowTotal, value) => rowTotal + (value ? 1 : 0), 0), 0),
@@ -350,7 +351,7 @@ export default function Home() {
 
 
   return (
-    <main className="v15Page">
+    <main className={`v15Page theme-${slot.visualProfile.theme}`}>
       <header className="v15Header glassPanel">
         <div className="v15BrandBlock">
           <span className="v15AnchorBadge">
@@ -407,7 +408,7 @@ export default function Home() {
           }}
         >
           <QRForest3D
-            matrix={displayMatrix}
+            matrix={sceneMatrix}
             progress={progress}
             theme={slot.visualProfile.theme}
             animationSpeed={slot.visualProfile.animationSpeed}
@@ -422,16 +423,11 @@ export default function Home() {
               <span className="scenePulse" />
               <div>
                 <strong>Jardín voxel</strong>
-                <small>{hasActualQR ? `Listo para florecer · ${weatherLabel}` : "Vista de ejemplo activa"}</small>
+                <small>{hasActualQR ? `Listo para florecer · ${weatherLabel}` : "Árbol de bienvenida · ejemplo en espera"}</small>
               </div>
             </div>
 
             <div className="v15SceneTopActions">
-              <button type="button" className="v15UploadQuick glassMiniPanel" onClick={() => inputRef.current?.click()}>
-                <UploadIcon />
-                <span>{hasActualQR ? "Reemplazar QR" : "Adjuntar QR"}</span>
-              </button>
-
               <div className="v15ViewSwitch glassMiniPanel" role="group" aria-label="Cambiar vista">
                 <button type="button" className={targetView === "forest" ? "active" : ""} onClick={() => setTargetView("forest")}>Bosque</button>
                 <button type="button" className={targetView === "qr" ? "active" : ""} onClick={() => setTargetView("qr")}>Desde arriba</button>
@@ -442,7 +438,7 @@ export default function Home() {
           {welcomeVisible && (
             <button type="button" className="v15WelcomeBubble glassMiniPanel" onClick={() => setWelcomeVisible(false)}>
               <strong>Bienvenido.</strong>
-              <span>La página muestra un QR de ejemplo. Adjunta el tuyo cuando quieras reemplazarlo.</span>
+              <span>Empieza con un árbol de bienvenida. El ejemplo queda abajo como referencia hasta que adjuntes tu propio QR.</span>
             </button>
           )}
 
