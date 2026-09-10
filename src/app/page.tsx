@@ -143,6 +143,7 @@ function ChevronIcon({ direction }: { direction: "left" | "right" }) {
 export default function Home() {
   const { slot, replaceQR, updateVisualProfile } = useQRSlot();
   const inputRef = useRef<HTMLInputElement>(null);
+  const bottomPanelRef = useRef<HTMLElement>(null);
   const progressRef = useRef(0);
   const timersRef = useRef<number[]>([]);
   const seasonTimersRef = useRef<number[]>([]);
@@ -156,6 +157,8 @@ export default function Home() {
   const [shareFeedback, setShareFeedback] = useState("");
   const [shareSidebarOpen, setShareSidebarOpen] = useState(false);
   const [welcomeVisible, setWelcomeVisible] = useState(true);
+  const [guideVisible, setGuideVisible] = useState(false);
+  const [uploadHintPulse, setUploadHintPulse] = useState(false);
   const [exportBusy, setExportBusy] = useState<"video" | "gif" | "image" | null>(null);
   const [seasonTransitioning, setSeasonTransitioning] = useState(false);
   const [seasonTransitionTarget, setSeasonTransitionTarget] = useState<VisualProfile["theme"] | null>(null);
@@ -261,6 +264,27 @@ export default function Home() {
     setPreviewVideoUrl("");
   };
 
+
+  const revealUploadArea = () => {
+    setGuideVisible(false);
+    setShareSidebarOpen(false);
+    window.setTimeout(() => {
+      bottomPanelRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: compactUiRef.current ? "start" : "center",
+      });
+      setUploadHintPulse(true);
+      timersRef.current.push(window.setTimeout(() => setUploadHintPulse(false), 4200));
+    }, 80);
+  };
+
+  const handleEnterGarden = () => {
+    setWelcomeVisible(false);
+    if (!hasActualQR) {
+      window.setTimeout(() => setGuideVisible(true), 180);
+    }
+  };
+
   const handleThemeChange = (theme: VisualProfile["theme"]) => {
     if (theme === activeUiTheme) return;
     seasonTimersRef.current.forEach((timer) => window.clearTimeout(timer));
@@ -282,6 +306,8 @@ export default function Home() {
     clearShowcaseTimers();
     setShareFeedback("");
     clearPreviewVideo();
+    setGuideVisible(false);
+    setUploadHintPulse(false);
     progressRef.current = 0;
     setProgress(0);
     setTargetView("forest");
@@ -668,7 +694,7 @@ export default function Home() {
           </div>
         )}
 
-        <section className={`v15BottomPanel glassPanel ${hasActualQR ? "" : "isDemoPanel"}`} aria-label="Datos del QR actual">
+        <section ref={bottomPanelRef} className={`v15BottomPanel glassPanel ${hasActualQR ? "" : "isDemoPanel"} ${uploadHintPulse ? "guidePulse" : ""}`} aria-label="Datos del QR actual">
           <article className="v15BottomCard v15FileCard">
             <header>
               <span className="v15LabelIcon"><FileIcon /></span>
@@ -688,11 +714,16 @@ export default function Home() {
                 <strong>{displayFileName}</strong>
                 <span>{displayFileMeta}</span>
               </div>
-              <button type="button" className="v15InlineAction" onClick={() => inputRef.current?.click()}>
+              <button type="button" className={`v15InlineAction ${uploadHintPulse ? "guideTarget" : ""}`} onClick={() => inputRef.current?.click()}>
                 <UploadIcon />
                 <span>Cambiar</span>
               </button>
             </div>
+            {!hasActualQR && (
+              <div className={`v18UploadGuideInline ${uploadHintPulse ? "active" : ""}`}>
+                Aquí adjuntas tu QR. Si estás en celular, baja un poco y toca <strong>Cambiar</strong>.
+              </div>
+            )}
           </article>
 
           <article className="v15BottomCard v15MatrixCard">
@@ -751,9 +782,28 @@ export default function Home() {
             <span className="v17WelcomeEyebrow">BIENVENIDO A</span>
             <h1>QR Voxel Studio</h1>
             <p>Convierte un QR en un jardín voxel estacional, anímalo y compártelo desde el cielo.</p>
-            <button type="button" onClick={() => setWelcomeVisible(false)}>
+            <button type="button" onClick={handleEnterGarden}>
               Entrar al jardín
             </button>
+          </div>
+        </div>
+      )}
+
+      {guideVisible && !hasActualQR && (
+        <div className="v18GuideOverlay" role="dialog" aria-modal="true" aria-label="Guía rápida para adjuntar un QR">
+          <div className="v18GuideCard">
+            <span className="v18GuideEyebrow">GUÍA RÁPIDA</span>
+            <h2>¿Dónde adjunto mi QR?</h2>
+            <p>Tu jardín ya está listo. Para reemplazar el ejemplo, usa el bloque <strong>Archivo</strong> que está debajo de la escena.</p>
+            <ol className="v18GuideSteps">
+              <li><span>1</span> En celular, desliza un poco hacia abajo.</li>
+              <li><span>2</span> Busca el panel <strong>Archivo</strong>.</li>
+              <li><span>3</span> Toca el botón <strong>Cambiar</strong> para adjuntar tu QR.</li>
+            </ol>
+            <div className="v18GuideActions">
+              <button type="button" className="v18GuideSecondary" onClick={() => setGuideVisible(false)}>Entendido</button>
+              <button type="button" className="v18GuidePrimary" onClick={revealUploadArea}>Muéstrame dónde</button>
+            </div>
           </div>
         </div>
       )}

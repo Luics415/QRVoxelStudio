@@ -8,7 +8,7 @@ if not exist node_modules (
   if errorlevel 1 goto :error
 )
 
-echo [QR Voxel Studio] Iniciando en https://
+echo [QR Voxel Studio] Iniciando en http://localhost:3000
 call npm run dev
 goto :eof
 
