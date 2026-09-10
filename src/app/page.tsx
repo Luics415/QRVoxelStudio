@@ -166,6 +166,7 @@ export default function Home() {
   const [previewVideoBusy, setPreviewVideoBusy] = useState(false);
 
   const hasActualQR = slot.qrMatrix.length > 0;
+  const qrClearMode = hasActualQR && (targetView === "qr" || progress > 0.82);
   const sceneMatrix = hasActualQR ? slot.qrMatrix : [];
   const displayMatrix = hasActualQR ? slot.qrMatrix : DEMO_MATRIX;
   const activeUiTheme = seasonTransitionTarget ?? slot.visualProfile.theme;
@@ -539,7 +540,7 @@ export default function Home() {
           <div className="v15SceneGlow v15SceneGlowWhite" />
           <div className={`v17SeasonVeil ${seasonTransitioning ? "active" : ""}`} aria-hidden="true" />
 
-          <div className="v15SceneTopbar">
+          <div className={`v15SceneTopbar ${qrClearMode ? "qrHidden" : ""}`}>
             <div className="v15SceneStatus glassMiniPanel">
               <span className="scenePulse" />
               <div>
@@ -578,6 +579,13 @@ export default function Home() {
             </div>
           )}
         </div>
+
+        {qrClearMode && (
+          <div className="v18QrToolbar glassMiniPanel" role="group" aria-label="Cambiar vista del jardín">
+            <button type="button" className={targetView === "forest" ? "active" : ""} onClick={() => setTargetView("forest")}>Bosque</button>
+            <button type="button" className={targetView === "qr" ? "active" : ""} onClick={() => setTargetView("qr")}>Desde arriba</button>
+          </div>
+        )}
 
         {shareSidebarOpen ? (
           <aside className="v15Sidebar glassPanel" aria-label="Compartir tu jardín">
@@ -797,9 +805,9 @@ export default function Home() {
             <p><strong>QRVoxelStudio</strong> es un animador para tus imágenes QR. Dales un diseño a tus QR y compártelos con tus amigos.</p>
             <p>Ahora, en el apartado de <strong>Archivo</strong>, puedes adjuntar tu QR y empezar la magia.</p>
             <ol className="v18GuideSteps">
-              <li><span>1</span> Entra al jardín y ubica el panel inferior.</li>
-              <li><span>2</span> Abre el apartado <strong>Archivo</strong>.</li>
-              <li><span>3</span> Toca <strong>Cambiar</strong> para subir tu QR.</li>
+              <li><span>1</span><p>Entra al jardín y ubica el panel inferior.</p></li>
+              <li><span>2</span><p>Abre el apartado <strong>Archivo</strong>.</p></li>
+              <li><span>3</span><p>Toca <strong>Cambiar</strong> para subir tu QR.</p></li>
             </ol>
             <div className="v18GuideActions">
               <button type="button" className="v18GuideSecondary" onClick={() => setGuideVisible(false)}>Entendido</button>

@@ -3438,3 +3438,188 @@ body::after {
     font-size: .78rem;
   }
 }
+
+/* v1.0.0 final polish for GitHub Pages */
+.v15SceneTopbar.qrHidden {
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+}
+
+.v18QrToolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 999px;
+  width: fit-content;
+  margin: -2px auto 0;
+  border: 1px solid rgba(255,255,255,.28);
+}
+
+.v18QrToolbar button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  font-weight: 900;
+  color: rgba(247, 251, 255, .82);
+  background: transparent;
+}
+
+.v18QrToolbar button.active {
+  color: #243444;
+  background: rgba(255,255,255,.92);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.4), 0 10px 24px rgba(77,104,140,.18);
+}
+
+.v18GuideSteps li p {
+  margin: 0;
+  min-width: 0;
+  line-height: 1.5;
+}
+
+/* Make mobile cards fully visible without horizontal drift */
+@media (max-width: 640px) {
+  .v15Page,
+  .sharedGeneratorPage,
+  .sharedGardenShell {
+    overflow-x: clip;
+  }
+
+  .v15BottomPanel,
+  .sharedGeneratorBottom {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .v15BottomCard,
+  .sharedGeneratorBottom .v15BottomCard {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .v15FileRow,
+  .sharedGeneratorBottom .v15FileRow {
+    display: grid;
+    grid-template-columns: 62px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+  }
+
+  .v15MatrixInfo,
+  .sharedGeneratorBottom .v15MatrixInfo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 62px;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .v15FilePreview,
+  .v15MatrixPreview {
+    width: 62px;
+    height: 62px;
+  }
+
+  .v15FileText,
+  .v15MatrixText,
+  .sharedGeneratorBottom .v15FileText,
+  .sharedGeneratorBottom .v15MatrixText {
+    min-width: 0;
+  }
+
+  .v15FileText strong,
+  .v15MatrixText strong,
+  .sharedGeneratorBottom .v15FileText strong,
+  .sharedGeneratorBottom .v15MatrixText strong {
+    font-size: .98rem;
+  }
+
+  .v15FileText span,
+  .v15MatrixText span,
+  .sharedGeneratorBottom .v15FileText span,
+  .sharedGeneratorBottom .v15MatrixText span {
+    font-size: .8rem;
+  }
+
+  .v15FileRow > .v15InlineAction {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .v15InlineAction,
+  .sharedGeneratorBottom .v15InlineAction {
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .v15InlineAction span {
+    display: inline !important;
+  }
+
+  .v15DecodedBox,
+  .sharedGeneratorBottom .v15DecodedBox {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .v15DecodedBox span,
+  .sharedGeneratorBottom .v15DecodedBox span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: .76rem;
+  }
+
+  .v15Header,
+  .sharedGeneratorHeader {
+    padding: 12px;
+  }
+
+  .v15BrandBlock,
+  .sharedGeneratorBrand {
+    gap: 12px;
+  }
+
+  .v15HeaderCenter,
+  .sharedGeneratorPage .v15HeaderCenter {
+    width: 100%;
+  }
+
+  .v15SeasonsPill,
+  .sharedGeneratorPage .v15SeasonsPill {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .v15SeasonsPill button,
+  .sharedGeneratorPage .v15SeasonsPill button {
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 4px;
+    min-height: 50px;
+    font-size: .68rem;
+  }
+
+  .v15ScenePane,
+  .sharedGeneratorScene {
+    overflow: visible;
+  }
+
+  .v18QrToolbar {
+    width: calc(100% - 20px);
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .v18QrToolbar button {
+    flex: 1;
+    min-width: 0;
+    padding: 0 10px;
+  }
+}

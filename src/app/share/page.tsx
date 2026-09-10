@@ -62,6 +62,7 @@ export default function SharedGardenPage() {
   const [targetView, setTargetView] = useState<"forest" | "qr">("forest");
   const [progress, setProgress] = useState(0);
   const progressRef = useRef(0);
+  const qrClearMode = targetView === "qr" || progress > 0.82;
   const progressUiStampRef = useRef(0);
   const compactUiRef = useRef(false);
   const seasonTimersRef = useRef<number[]>([]);
@@ -207,7 +208,7 @@ export default function SharedGardenPage() {
           <div className="v15SceneGlow v15SceneGlowWhite" />
           <div className={`sharedSeasonVeil ${seasonTransitioning ? "active" : ""}`} aria-hidden="true" />
 
-          <div className="v15SceneTopbar">
+          <div className={`v15SceneTopbar ${qrClearMode ? "qrHidden" : ""}`}>
             <div className="v15SceneStatus glassMiniPanel">
               <span className="scenePulse" />
               <div>
@@ -222,6 +223,13 @@ export default function SharedGardenPage() {
             </div>
           </div>
         </div>
+
+        {qrClearMode && (
+          <div className="v18QrToolbar glassMiniPanel" role="group" aria-label="Cambiar vista del jardín compartido">
+            <button type="button" className={targetView === "forest" ? "active" : ""} onClick={() => setTargetView("forest")}>Bosque</button>
+            <button type="button" className={targetView === "qr" ? "active" : ""} onClick={() => setTargetView("qr")}>Desde arriba</button>
+          </div>
+        )}
 
         <section className="v15BottomPanel glassPanel sharedGeneratorBottom" aria-label="Datos del jardín compartido">
           <article className="v15BottomCard v15FileCard">
