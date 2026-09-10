@@ -793,12 +793,13 @@ export default function Home() {
         <div className="v18GuideOverlay" role="dialog" aria-modal="true" aria-label="Guía rápida para adjuntar un QR">
           <div className="v18GuideCard">
             <span className="v18GuideEyebrow">GUÍA RÁPIDA</span>
-            <h2>¿Dónde adjunto mi QR?</h2>
-            <p>Tu jardín ya está listo. Para reemplazar el ejemplo, usa el bloque <strong>Archivo</strong> que está debajo de la escena.</p>
+            <h2>Empieza la magia con tu QR</h2>
+            <p><strong>QRVoxelStudio</strong> es un animador para tus imágenes QR. Dales un diseño a tus QR y compártelos con tus amigos.</p>
+            <p>Ahora, en el apartado de <strong>Archivo</strong>, puedes adjuntar tu QR y empezar la magia.</p>
             <ol className="v18GuideSteps">
-              <li><span>1</span> En celular, desliza un poco hacia abajo.</li>
-              <li><span>2</span> Busca el panel <strong>Archivo</strong>.</li>
-              <li><span>3</span> Toca el botón <strong>Cambiar</strong> para adjuntar tu QR.</li>
+              <li><span>1</span> Entra al jardín y ubica el panel inferior.</li>
+              <li><span>2</span> Abre el apartado <strong>Archivo</strong>.</li>
+              <li><span>3</span> Toca <strong>Cambiar</strong> para subir tu QR.</li>
             </ol>
             <div className="v18GuideActions">
               <button type="button" className="v18GuideSecondary" onClick={() => setGuideVisible(false)}>Entendido</button>

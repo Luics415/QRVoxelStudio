@@ -3278,3 +3278,163 @@ body::after {
     width: 100%;
   }
 }
+
+/* v0.18.3 mobile responsiveness refinements */
+.v15BottomCard,
+.v15FileRow,
+.v15MatrixInfo,
+.v15DecodedBox,
+.v15HeaderCenter,
+.v15BrandCopy,
+.v15BrandBlock,
+.v15SignatureBlock {
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .v15Header,
+  .sharedGeneratorHeader {
+    gap: 12px;
+  }
+
+  .v15HeaderCenter,
+  .sharedGeneratorPage .v15HeaderCenter {
+    width: 100%;
+    overflow: visible;
+  }
+
+  .v15SeasonsPill,
+  .sharedGeneratorPage .v15SeasonsPill {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: stretch;
+    width: 100%;
+    max-width: 100%;
+    gap: 6px;
+    padding: 6px;
+    overflow: visible;
+    border-radius: 22px;
+  }
+
+  .v15SeasonsPill button,
+  .sharedGeneratorPage .v15SeasonsPill button {
+    min-width: 0;
+    width: 100%;
+    min-height: 44px;
+    padding: 0 6px;
+    gap: 4px;
+    justify-content: center;
+    font-size: .72rem;
+    line-height: 1.05;
+    text-align: center;
+  }
+
+  .v15SeasonsPill button .seasonGlyph,
+  .sharedGeneratorPage .v15SeasonsPill button .seasonGlyph {
+    font-size: .95rem;
+  }
+
+  .v15FileRow {
+    display: grid;
+    grid-template-columns: 68px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+  }
+
+  .v15FileRow > .v15InlineAction {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+    padding: 0 14px;
+  }
+
+  .v15FileRow > .v15InlineAction span {
+    display: inline;
+  }
+
+  .v15MatrixInfo {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 68px;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .v15DecodedBox {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    align-items: center;
+    gap: 8px;
+    padding-inline: 12px;
+  }
+
+  .v15DecodedBox span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: .78rem;
+  }
+
+  .v15BottomPanel,
+  .sharedGeneratorBottom {
+    overflow: hidden;
+  }
+
+  .v15BottomCard {
+    overflow: hidden;
+    padding: 15px;
+  }
+
+  .v15BottomCard header strong {
+    font-size: .9rem;
+  }
+
+  .v18GuideCard {
+    gap: 12px;
+  }
+
+  .v18GuideCard p {
+    font-size: .95rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .v15AnchorBadge {
+    width: 56px;
+    height: 56px;
+  }
+
+  .v15BrandCopy strong {
+    font-size: 1.55rem;
+  }
+
+  .v15SeasonsPill button,
+  .sharedGeneratorPage .v15SeasonsPill button {
+    min-height: 42px;
+    padding: 0 4px;
+    font-size: .68rem;
+  }
+
+  .v15SeasonsPill button .seasonGlyph,
+  .sharedGeneratorPage .v15SeasonsPill button .seasonGlyph {
+    font-size: .88rem;
+  }
+
+  .v15FilePreview,
+  .v15MatrixPreview {
+    width: 62px;
+    height: 62px;
+    border-radius: 14px;
+  }
+
+  .v15FileText strong,
+  .v15MatrixText strong {
+    font-size: .96rem;
+  }
+
+  .v15FileText span,
+  .v15MatrixText span,
+  .v18UploadGuideInline {
+    font-size: .78rem;
+  }
+}
