@@ -12,10 +12,6 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "QR Voxel Studio",
   description: "Jardines voxel estacionales que revelan un QR compartible desde el cielo.",
-  icons: {
-    icon: "/icon.png",
-    apple: "/icon.png",
-  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

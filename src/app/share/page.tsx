@@ -38,8 +38,14 @@ export default function SharedGardenPage() {
   const [progress, setProgress] = useState(0);
   const [weatherLabel, setWeatherLabel] = useState("Claro suave");
   const progressRef = useRef(0);
-  const targetProgressRef = useRef(0);
+  const progressUiStampRef = useRef(0);
+  const compactUiRef = useRef(false);
   const timersRef = useRef<number[]>([]);
+  const seasonTimersRef = useRef<number[]>([]);
+  const [targetProgress, setTargetProgress] = useState(0);
+  const [seasonTransitionTarget, setSeasonTransitionTarget] = useState<VisualProfile["theme"] | null>(null);
+  const [seasonTransitioning, setSeasonTransitioning] = useState(false);
+  const activeTheme = seasonTransitionTarget ?? theme;
 
   useEffect(() => {
     try {
@@ -56,28 +62,56 @@ export default function SharedGardenPage() {
   }, []);
 
   useEffect(() => {
+    const compactMedia = window.matchMedia("(max-width: 820px), (pointer: coarse)");
+    const updateCompactMode = () => {
+      compactUiRef.current = compactMedia.matches;
+    };
+    updateCompactMode();
+    compactMedia.addEventListener?.("change", updateCompactMode);
+    return () => compactMedia.removeEventListener?.("change", updateCompactMode);
+  }, []);
+
+  useEffect(() => {
+    const colors: Record<VisualProfile["theme"], string> = {
+      neutral: "#B6DDFE",
+      spring: "#D6E8F5",
+      summer: "#BEE7DC",
+      autumn: "#EAD9D2",
+      winter: "#D9EAFA",
+    };
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    meta?.setAttribute("content", colors[activeTheme]);
+  }, [activeTheme]);
+
+  useEffect(() => {
     let frame = 0;
     let last = performance.now();
 
     const tick = (now: number) => {
       const delta = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
       last = now;
-      const target = targetProgressRef.current;
       const current = progressRef.current;
       const response = 1 - Math.exp(-delta * 3.5);
-      const next = current + (target - current) * response;
-      const settled = Math.abs(target - next) < 0.0015 ? target : next;
+      const next = current + (targetProgress - current) * response;
+      const settled = Math.abs(targetProgress - next) < 0.0015 ? targetProgress : next;
       progressRef.current = settled;
-      setProgress(settled);
-      frame = requestAnimationFrame(tick);
+      const minUiFrameMs = compactUiRef.current ? 46 : 30;
+      if (settled === targetProgress || now - progressUiStampRef.current >= minUiFrameMs) {
+        progressUiStampRef.current = now;
+        setProgress(settled);
+      }
+      if (settled !== targetProgress) frame = requestAnimationFrame(tick);
     };
 
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, []);
+  }, [targetProgress]);
 
   useEffect(() => {
-    return () => timersRef.current.forEach((timer) => window.clearTimeout(timer));
+    return () => {
+      timersRef.current.forEach((timer) => window.clearTimeout(timer));
+      seasonTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    };
   }, []);
 
   const clearTimers = () => {
@@ -85,32 +119,47 @@ export default function SharedGardenPage() {
     timersRef.current = [];
   };
 
+  const transitionTheme = (nextTheme: VisualProfile["theme"]) => {
+    if (nextTheme === activeTheme) return;
+    seasonTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    seasonTimersRef.current = [];
+    setSeasonTransitionTarget(nextTheme);
+    setSeasonTransitioning(true);
+    seasonTimersRef.current.push(
+      window.setTimeout(() => setTheme(nextTheme), 140),
+      window.setTimeout(() => {
+        setSeasonTransitioning(false);
+        setSeasonTransitionTarget(null);
+      }, 560),
+    );
+  };
+
   const chooseTheme = (nextTheme: VisualProfile["theme"]) => {
     clearTimers();
     setPlaying(false);
-    targetProgressRef.current = 0;
-    setTheme(nextTheme);
+    setTargetProgress(0);
+    transitionTheme(nextTheme);
   };
 
   const playGarden = () => {
     if (!matrix.length) return;
     clearTimers();
     setPlaying(true);
-    targetProgressRef.current = 0;
-    setTheme("spring");
+    setTargetProgress(0);
+    transitionTheme("spring");
 
     timersRef.current.push(
-      window.setTimeout(() => setTheme("summer"), 3200),
-      window.setTimeout(() => setTheme("autumn"), 6400),
-      window.setTimeout(() => setTheme("winter"), 9600),
+      window.setTimeout(() => transitionTheme("summer"), 3200),
+      window.setTimeout(() => transitionTheme("autumn"), 6400),
+      window.setTimeout(() => transitionTheme("winter"), 9600),
       window.setTimeout(() => {
-        targetProgressRef.current = 1;
+        setTargetProgress(1);
       }, 12600),
       window.setTimeout(() => {
-        targetProgressRef.current = 0;
+        setTargetProgress(0);
       }, 16600),
       window.setTimeout(() => {
-        setTheme("spring");
+        transitionTheme("spring");
         setPlaying(false);
       }, 19800),
     );
@@ -133,7 +182,7 @@ export default function SharedGardenPage() {
   }
 
   return (
-    <main className="sharedGardenShell">
+    <main className={`sharedGardenShell theme-${activeTheme}`}>
       <header className="sharedGardenHeader">
         <Link href="/" className="sharedBrand">
           <Image src={`${BASE_PATH}/anchor-studio.png`} alt="Ancla de QR Voxel Studio" width={48} height={48} priority />
@@ -149,6 +198,7 @@ export default function SharedGardenPage() {
         <QRForest3D matrix={matrix} progress={progress} theme={theme} animationSpeed={1} onWeatherChange={setWeatherLabel} />
         <div className="stageGlow stageGlowRose" />
         <div className="stageGlow stageGlowCyan" />
+        <div className={`sharedSeasonVeil ${seasonTransitioning ? "active" : ""}`} aria-hidden="true" />
 
         <div className="sharedGardenIdentity">
           <span className="scenePulse" />
@@ -163,7 +213,7 @@ export default function SharedGardenPage() {
             <button
               key={season.value}
               type="button"
-              className={theme === season.value ? "active" : ""}
+              className={activeTheme === season.value ? "active" : ""}
               onClick={() => chooseTheme(season.value)}
             >
               <span style={{ background: season.dot }} />

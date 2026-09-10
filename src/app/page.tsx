@@ -7,7 +7,7 @@ import { QRForest3D } from "@/components/visual/qr-forest-3d";
 import { createSharedGardenPayload, makeShareUrl } from "@/features/share/share-payload";
 import { createSceneGif, downloadGif, downloadScenePng, downloadVideoResult, getSceneCanvas, recordSceneVideo } from "@/features/export/export-garden";
 import { useQRSlot } from "@/hooks/use-qr-slot";
-import type { VisualProfile } from "@/models/qr-slot";
+import type { QRMatrix, VisualProfile } from "@/models/qr-slot";
 
 const THEMES: Array<{
   value: VisualProfile["theme"];
@@ -26,7 +26,7 @@ const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
 const DEMO_URL = "https://luics415.github.io/QRVoxelStudio/";
 const DEMO_FILE_NAME = "qr-voxel-studio-demo.png";
 const DEMO_FILE_META = "PNG - ejemplo";
-const DEMO_MATRIX: boolean[][] = [[true, true, true, true, true, true, true, false, true, true, false, false, true, false, false, false, false, true, true, false, false, false, true, true, true, true, true, true, true], [true, false, false, false, false, false, true, false, true, true, true, true, false, false, true, true, false, true, false, false, true, false, true, false, false, false, false, false, true], [true, false, true, true, true, false, true, false, true, false, false, false, true, true, true, false, true, false, true, true, true, false, true, false, true, true, true, false, true], [true, false, true, true, true, false, true, false, false, false, true, false, false, true, false, false, true, true, false, false, false, false, true, false, true, true, true, false, true], [true, false, true, true, true, false, true, false, false, false, true, true, false, false, true, false, false, true, true, true, false, false, true, false, true, true, true, false, true], [true, false, false, false, false, false, true, false, true, false, true, false, false, true, true, false, true, true, false, false, false, false, true, false, false, false, false, false, true], [true, true, true, true, true, true, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, false, true, true, true, true, true, true, true], [false, false, false, false, false, false, false, false, true, false, true, false, false, false, false, false, true, true, true, true, false, false, false, false, false, false, false, false, false], [false, false, true, true, true, false, true, false, true, true, false, true, false, false, true, false, false, false, false, false, true, true, true, true, false, false, true, true, true], [true, false, true, false, false, true, false, false, false, false, true, true, false, false, false, true, false, false, true, false, true, false, false, true, true, true, false, false, true], [true, true, true, false, false, true, true, false, false, true, true, true, false, false, false, true, true, true, true, false, true, true, true, true, false, false, false, false, false], [false, false, true, false, true, false, false, false, false, true, true, false, true, true, false, false, true, true, true, true, true, true, true, true, false, true, false, true, false], [false, true, true, true, true, true, true, false, false, false, false, false, false, false, true, false, false, false, true, false, true, true, false, true, false, false, true, true, true], [false, true, true, true, true, true, false, true, false, true, true, false, false, true, true, true, false, true, true, true, true, true, true, false, true, true, false, true, true], [true, true, false, false, true, false, true, true, false, true, false, true, true, false, true, false, true, false, false, false, true, false, false, true, false, false, false, false, false], [true, true, true, false, false, false, false, false, true, false, true, false, false, true, true, true, true, true, true, false, false, true, true, false, true, true, false, false, true], [true, false, false, false, false, false, true, false, true, false, false, false, false, true, true, false, false, false, false, false, false, false, false, false, false, true, true, false, true], [true, true, false, false, true, true, false, true, false, false, true, false, false, false, true, true, true, true, true, true, true, false, false, true, true, true, false, true, true], [true, false, false, true, true, true, true, false, false, false, true, false, true, false, false, false, false, true, false, false, false, false, true, true, false, true, false, false, false], [true, false, false, false, true, true, false, false, true, true, false, false, false, false, false, false, false, true, true, true, false, false, true, true, false, true, false, false, true], [true, false, true, true, true, true, true, false, false, false, true, true, true, true, false, true, false, true, false, false, true, true, true, true, true, true, true, false, false], [false, false, false, false, false, false, false, false, true, false, false, true, false, false, false, false, false, true, true, true, true, false, false, false, true, true, false, true, true], [true, true, true, true, true, true, true, false, false, false, true, false, true, false, false, true, false, false, false, true, true, false, true, false, true, false, false, false, false], [true, false, false, false, false, false, true, false, false, true, true, true, false, false, true, false, true, false, true, true, true, false, false, false, true, true, false, false, true], [true, false, true, true, true, false, true, false, true, true, true, false, true, false, false, false, false, false, true, false, true, true, true, true, true, true, true, true, false], [true, false, true, true, true, false, true, false, true, false, true, false, true, false, true, false, false, false, false, true, true, true, false, true, false, false, false, false, false], [true, false, true, true, true, false, true, false, true, true, true, false, true, true, false, false, false, false, true, true, true, true, true, true, true, true, true, true, false], [true, false, false, false, false, false, true, false, false, false, true, false, true, false, true, true, true, true, true, true, false, false, false, false, true, false, false, true, false], [true, true, true, true, true, true, true, false, false, true, true, false, false, true, true, true, false, false, true, true, false, true, false, false, true, false, true, false, false]];
+const DEMO_MATRIX: QRMatrix = [[1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1], [1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1], [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1], [1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1], [1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1], [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1], [1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1], [1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1], [1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0], [0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0], [0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1], [0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1], [1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0], [1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1], [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1], [1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1], [1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0], [1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1], [1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1], [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1], [1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0], [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0], [1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0], [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0], [1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0]];
 const DEMO_ACTIVE_MODULES = 423;
 
 function formatFileSize(size?: number) {
@@ -145,6 +145,9 @@ export default function Home() {
   const inputRef = useRef<HTMLInputElement>(null);
   const progressRef = useRef(0);
   const timersRef = useRef<number[]>([]);
+  const seasonTimersRef = useRef<number[]>([]);
+  const progressUiStampRef = useRef(0);
+  const compactUiRef = useRef(false);
   const [targetView, setTargetView] = useState<"forest" | "qr">("forest");
   const [progress, setProgress] = useState(0);
   const [dragActive, setDragActive] = useState(false);
@@ -153,10 +156,13 @@ export default function Home() {
   const [shareSidebarOpen, setShareSidebarOpen] = useState(true);
   const [welcomeVisible, setWelcomeVisible] = useState(true);
   const [exportBusy, setExportBusy] = useState<"video" | "gif" | "image" | null>(null);
+  const [seasonTransitioning, setSeasonTransitioning] = useState(false);
+  const [seasonTransitionTarget, setSeasonTransitionTarget] = useState<VisualProfile["theme"] | null>(null);
 
   const hasActualQR = slot.qrMatrix.length > 0;
   const sceneMatrix = hasActualQR ? slot.qrMatrix : [];
-  const displayMatrix = hasActualQR ? slot.qrMatrix : DEMO_MATRIX.map((row) => row.map((value) => (value ? 1 : 0)));
+  const displayMatrix = hasActualQR ? slot.qrMatrix : DEMO_MATRIX;
+  const activeUiTheme = seasonTransitionTarget ?? slot.visualProfile.theme;
   const activeModules = useMemo(
     () => displayMatrix.reduce((total, row) => total + row.reduce((rowTotal, value) => rowTotal + (value ? 1 : 0), 0), 0),
     [displayMatrix],
@@ -168,14 +174,36 @@ export default function Home() {
     : DEMO_FILE_META;
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setWelcomeVisible(false), 3600);
-    return () => window.clearTimeout(timer);
+    if (!welcomeVisible) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [welcomeVisible]);
+
+  useEffect(() => {
+    const compactMedia = window.matchMedia("(max-width: 820px), (pointer: coarse)");
+    const updateCompactMode = () => {
+      compactUiRef.current = compactMedia.matches;
+      if (compactMedia.matches) setShareSidebarOpen(false);
+    };
+    updateCompactMode();
+    compactMedia.addEventListener?.("change", updateCompactMode);
+    return () => compactMedia.removeEventListener?.("change", updateCompactMode);
   }, []);
 
   useEffect(() => {
-    const mobile = window.matchMedia("(max-width: 820px)");
-    if (mobile.matches) setShareSidebarOpen(false);
-  }, []);
+    const colors: Record<VisualProfile["theme"], string> = {
+      neutral: "#B6DDFE",
+      spring: "#D6E8F5",
+      summer: "#BEE7DC",
+      autumn: "#EAD9D2",
+      winter: "#D9EAFA",
+    };
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+    meta?.setAttribute("content", hasActualQR ? colors[activeUiTheme] : "#B6DDFE");
+  }, [activeUiTheme, hasActualQR]);
 
   useEffect(() => {
     let frame = 0;
@@ -190,7 +218,11 @@ export default function Home() {
       const next = current + (target - current) * response;
       const settled = Math.abs(target - next) < 0.0015 ? target : next;
       progressRef.current = settled;
-      setProgress(settled);
+      const minUiFrameMs = compactUiRef.current ? 46 : 30;
+      if (settled === target || now - progressUiStampRef.current >= minUiFrameMs) {
+        progressUiStampRef.current = now;
+        setProgress(settled);
+      }
       if (settled !== target) frame = requestAnimationFrame(tick);
     };
 
@@ -199,12 +231,35 @@ export default function Home() {
   }, [targetView, slot.visualProfile.animationSpeed]);
 
   useEffect(() => {
-    return () => timersRef.current.forEach((timer) => window.clearTimeout(timer));
+    return () => {
+      timersRef.current.forEach((timer) => window.clearTimeout(timer));
+      seasonTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    };
   }, []);
 
   const clearShowcaseTimers = () => {
     timersRef.current.forEach((timer) => window.clearTimeout(timer));
     timersRef.current = [];
+    seasonTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    seasonTimersRef.current = [];
+    setSeasonTransitioning(false);
+    setSeasonTransitionTarget(null);
+  };
+
+  const handleThemeChange = (theme: VisualProfile["theme"]) => {
+    if (theme === activeUiTheme) return;
+    seasonTimersRef.current.forEach((timer) => window.clearTimeout(timer));
+    seasonTimersRef.current = [];
+    setSeasonTransitionTarget(theme);
+    setSeasonTransitioning(true);
+
+    seasonTimersRef.current.push(
+      window.setTimeout(() => updateVisualProfile({ theme }), 150),
+      window.setTimeout(() => {
+        setSeasonTransitioning(false);
+        setSeasonTransitionTarget(null);
+      }, 620),
+    );
   };
 
   const handleFile = async (file?: File) => {
@@ -218,6 +273,10 @@ export default function Home() {
   };
 
   const playShowcase = () => {
+    if (!hasActualQR) {
+      setShareFeedback("Adjunta un QR para desbloquear la reproducción y la vista desde arriba.");
+      return;
+    }
     clearShowcaseTimers();
     setTargetView("forest");
     setShareFeedback("Reproduciendo la transición del jardín.");
@@ -230,7 +289,7 @@ export default function Home() {
   };
 
   const buildShareUrl = () => {
-    if (typeof window === "undefined") return "";
+    if (typeof window === "undefined" || !hasActualQR) return "";
     const payload = createSharedGardenPayload({
       matrix: displayMatrix,
       fileName: displayFileName,
@@ -351,7 +410,7 @@ export default function Home() {
 
 
   return (
-    <main className={`v15Page theme-${slot.visualProfile.theme}`}>
+    <main className={`v15Page theme-${activeUiTheme} ${hasActualQR ? "" : "theme-pre-qr"}`}>
       <header className="v15Header glassPanel">
         <div className="v15BrandBlock">
           <span className="v15AnchorBadge">
@@ -370,8 +429,8 @@ export default function Home() {
               <button
                 key={theme.value}
                 type="button"
-                className={slot.visualProfile.theme === theme.value ? "active" : ""}
-                onClick={() => updateVisualProfile({ theme: theme.value })}
+                className={activeUiTheme === theme.value ? "active" : ""}
+                onClick={() => handleThemeChange(theme.value)}
               >
                 <span className="seasonGlyph" style={{ color: theme.dot }}>{theme.glyph}</span>
                 <span>{theme.label}</span>
@@ -417,6 +476,7 @@ export default function Home() {
 
           <div className="v15SceneGlow v15SceneGlowPink" />
           <div className="v15SceneGlow v15SceneGlowWhite" />
+          <div className={`v17SeasonVeil ${seasonTransitioning ? "active" : ""}`} aria-hidden="true" />
 
           <div className="v15SceneTopbar">
             <div className="v15SceneStatus glassMiniPanel">
@@ -430,17 +490,18 @@ export default function Home() {
             <div className="v15SceneTopActions">
               <div className="v15ViewSwitch glassMiniPanel" role="group" aria-label="Cambiar vista">
                 <button type="button" className={targetView === "forest" ? "active" : ""} onClick={() => setTargetView("forest")}>Bosque</button>
-                <button type="button" className={targetView === "qr" ? "active" : ""} onClick={() => setTargetView("qr")}>Desde arriba</button>
+                <button
+                  type="button"
+                  className={targetView === "qr" ? "active" : ""}
+                  onClick={() => hasActualQR && setTargetView("qr")}
+                  disabled={!hasActualQR || slot.status === "loading"}
+                  title={!hasActualQR ? "Adjunta un QR para desbloquear esta vista" : "Ver QR desde arriba"}
+                >
+                  Desde arriba
+                </button>
               </div>
             </div>
           </div>
-
-          {welcomeVisible && (
-            <button type="button" className="v15WelcomeBubble glassMiniPanel" onClick={() => setWelcomeVisible(false)}>
-              <strong>Bienvenido.</strong>
-              <span>Empieza con un árbol de bienvenida. El ejemplo queda abajo como referencia hasta que adjuntes tu propio QR.</span>
-            </button>
-          )}
 
           {slot.status === "loading" && (
             <div className="v15LoadingState glassMiniPanel" role="status">
@@ -474,7 +535,7 @@ export default function Home() {
               </button>
             </div>
 
-            <button type="button" className="v15MediaPreview" onClick={playShowcase}>
+            <button type="button" className="v15MediaPreview" onClick={playShowcase} disabled={!hasActualQR}>
               <div className="v15MediaBackdrop">
                 <div className="v15MediaSeasonDots">
                   {THEMES.map((theme) => (
@@ -492,8 +553,8 @@ export default function Home() {
                   <button
                     key={`quick-${theme.value}`}
                     type="button"
-                    className={slot.visualProfile.theme === theme.value ? "active" : ""}
-                    onClick={() => updateVisualProfile({ theme: theme.value })}
+                    className={activeUiTheme === theme.value ? "active" : ""}
+                    onClick={() => handleThemeChange(theme.value)}
                     aria-label={`Cambiar a ${theme.label}`}
                     title={theme.label}
                   >
@@ -503,23 +564,23 @@ export default function Home() {
               </div>
             </div>
 
-            <button type="button" className="v15PrimaryShareButton" onClick={copyShareLink}>
+            <button type="button" className="v15PrimaryShareButton" onClick={copyShareLink} disabled={!hasActualQR || exportBusy !== null}>
               <LinkIcon />
               <span>Copiar enlace del jardín</span>
             </button>
 
             <div className="v15SecondaryActions">
-              <button type="button" className="v15SecondaryAction" onClick={() => void handleSecondaryAction("video")} disabled={exportBusy !== null}>
+              <button type="button" className="v15SecondaryAction" onClick={() => void handleSecondaryAction("video")} disabled={!hasActualQR || exportBusy !== null}>
                 <span className="v15SecondaryActionLeft"><DownloadIcon /> {exportBusy === "video" ? "Grabando video…" : "Descargar como video"}</span>
                 <span className="v15Chevron">⌄</span>
               </button>
-              <button type="button" className="v15SecondaryAction" onClick={() => void handleSecondaryAction("gif")} disabled={exportBusy !== null}>
+              <button type="button" className="v15SecondaryAction" onClick={() => void handleSecondaryAction("gif")} disabled={!hasActualQR || exportBusy !== null}>
                 <span className="v15SecondaryActionLeft"><GifIcon /> {exportBusy === "gif" ? "Creando GIF…" : "Descargar como GIF"}</span>
               </button>
-              <button type="button" className="v15SecondaryAction" onClick={() => void handleSecondaryAction("image")} disabled={exportBusy !== null}>
+              <button type="button" className="v15SecondaryAction" onClick={() => void handleSecondaryAction("image")} disabled={!hasActualQR || exportBusy !== null}>
                 <span className="v15SecondaryActionLeft"><ImageIcon /> {exportBusy === "image" ? "Generando imagen…" : "Descargar como imagen"}</span>
               </button>
-              <button type="button" className="v15SecondaryAction" onClick={() => void handleSecondaryAction("embed")} disabled={exportBusy !== null}>
+              <button type="button" className="v15SecondaryAction" onClick={() => void handleSecondaryAction("embed")} disabled={!hasActualQR || exportBusy !== null}>
                 <span className="v15SecondaryActionLeft"><CodeIcon /> Insertar en sitio web</span>
               </button>
             </div>
@@ -528,23 +589,25 @@ export default function Home() {
               <p>El enlace incluye animaciones y cambio de estaciones. Cualquier persona podrá ver tu jardín interactivo.</p>
               {shareFeedback && <div className="v15FeedbackBubble">{shareFeedback}</div>}
               <div className="v15SidebarLinks">
-                <button type="button" onClick={openSharedView}>Abrir vista compartida</button>
+                <button type="button" onClick={openSharedView} disabled={!hasActualQR}>Abrir vista compartida</button>
               </div>
             </div>
           </aside>
         ) : (
-          <button
-            type="button"
-            className="v15SidebarBubble glassMiniPanel"
-            onClick={() => setShareSidebarOpen(true)}
-            aria-label="Abrir panel de compartir"
-          >
-            <ChevronIcon direction="left" />
-            <span>Compartir</span>
-          </button>
+          <div className="v17ShareDock">
+            <button
+              type="button"
+              className="v15SidebarBubble glassMiniPanel"
+              onClick={() => setShareSidebarOpen(true)}
+              aria-label="Abrir panel de compartir"
+            >
+              <ChevronIcon direction="left" />
+              <span>Compartir</span>
+            </button>
+          </div>
         )}
 
-        <section className="v15BottomPanel glassPanel" aria-label="Datos del QR actual">
+        <section className={`v15BottomPanel glassPanel ${hasActualQR ? "" : "isDemoPanel"}`} aria-label="Datos del QR actual">
           <article className="v15BottomCard v15FileCard">
             <header>
               <span className="v15LabelIcon"><FileIcon /></span>
@@ -617,6 +680,22 @@ export default function Home() {
           </article>
         </section>
       </section>
+
+      {welcomeVisible && (
+        <div className="v17WelcomeScreen" role="dialog" aria-modal="true" aria-label="Bienvenida a QR Voxel Studio">
+          <div className="v17WelcomeCard">
+            <span className="v17WelcomeIcon">
+              <Image src={`${BASE_PATH}/anchor-studio.png`} alt="Ancla de QR Voxel Studio" width={96} height={96} priority />
+            </span>
+            <span className="v17WelcomeEyebrow">BIENVENIDO A</span>
+            <h1>QR Voxel Studio</h1>
+            <p>Convierte un QR en un jardín voxel estacional, anímalo y compártelo desde el cielo.</p>
+            <button type="button" onClick={() => setWelcomeVisible(false)}>
+              Entrar al jardín
+            </button>
+          </div>
+        </div>
+      )}
 
       {slot.error && (
         <div className="v15ErrorBanner glassMiniPanel" role="alert">

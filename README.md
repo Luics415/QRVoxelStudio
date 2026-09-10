@@ -1,6 +1,6 @@
 # QR Voxel Studio
 
-Versión **v0.16** de QR Voxel Studio: creador de jardines QR voxel, compartibles, exportables y preparado para GitHub Pages.
+Versión **v0.17** de QR Voxel Studio: creador de jardines QR voxel, compartibles, exportables y preparado para GitHub Pages.
 
 ## Estado actual
 
@@ -21,8 +21,17 @@ La pantalla principal dejó de ser una demo 2D. Ahora usa una escena 3D real bas
 - transición suave de colores al cambiar de estación;
 - botón **Reproducir** para mostrar automáticamente Bosque → QR → Bosque;
 - arrastrar y soltar un QR directamente sobre la escena;
-- botón compacto para reemplazar el QR sin perder el perfil visual;
-- interfaz principal visual y minimalista, separada de los datos técnicos.
+- carga/reemplazo del QR desde el panel de Archivo, sin duplicar controles sobre la escena;
+- interfaz principal visual y minimalista, separada de los datos técnicos;
+- bienvenida de pantalla completa con un único árbol antes de cargar un QR;
+- vista **Desde arriba** bloqueada hasta que exista un QR real;
+- fondos y acentos estacionales con transición visual;
+- modo adaptativo de rendimiento para móviles y equipos limitados;
+- actualización del bosque y partículas limitada por frecuencia para reducir caídas de FPS;
+- flores de primavera del suelo renderizadas con instancing para conservar detalle con muchas menos llamadas de dibujo;
+- pétalos de primavera restaurados al comportamiento previo (caída individual), separándolos de las flores del suelo;
+- panel Compartir minimizado colocado en el flujo de la página en lugar de flotar sobre la escena;
+- favicon/ancla preparado mediante `app/icon.png` y `app/apple-icon.png` para el despliegue en GitHub Pages.
 
 ### Laboratorio `/lab`
 

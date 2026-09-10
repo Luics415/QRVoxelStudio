@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Color,
   Group,
@@ -77,6 +77,14 @@ type Cell = {
 };
 
 type WeatherMode = "sun" | "breeze" | "drizzle" | "rain" | "snow";
+
+type RenderQuality = "desktop" | "mobile";
+
+function partsForQuality(parts: VoxelPart[], quality: RenderQuality) {
+  if (quality === "desktop" || parts.length <= 5) return parts;
+  return parts.filter((_, index) => index < 3 || index % 2 === 0);
+}
+
 
 const PALETTES: Record<VisualProfile["theme"], ScenePalette> = {
   neutral: {
@@ -584,6 +592,7 @@ function CameraRig({ progress, side }: { progress: number; side: number }) {
   const mixedUp = useMemo(() => new Vector3(), []);
   const forestUp = useMemo(() => new Vector3(0, 1, 0), []);
   const topUp = useMemo(() => new Vector3(0, 0, -1), []);
+  const lastFovRef = useRef(-1);
 
   useFrame(() => {
     const t = smoother(progress);
@@ -600,8 +609,12 @@ function CameraRig({ progress, side }: { progress: number; side: number }) {
     camera.lookAt(0, t < 0.7 ? 0.58 * (1 - t) : 0, 0);
     const perspective = camera as PerspectiveCamera;
     if (typeof perspective.fov === "number") {
-      perspective.fov = lerp(35, 28, t);
-      perspective.updateProjectionMatrix();
+      const nextFov = lerp(35, 28, t);
+      if (Math.abs(nextFov - lastFovRef.current) > 0.015) {
+        perspective.fov = nextFov;
+        lastFovRef.current = nextFov;
+        perspective.updateProjectionMatrix();
+      }
     }
   });
 
@@ -612,11 +625,13 @@ function SeasonalAtmosphere({
   theme,
   side,
   progress,
+  quality,
   onWeatherChange,
 }: {
   theme: VisualProfile["theme"];
   side: number;
   progress: number;
+  quality: RenderQuality;
   onWeatherChange?: (label: string) => void;
 }) {
   const palette = PALETTES[theme];
@@ -635,15 +650,20 @@ function SeasonalAtmosphere({
   const rainDummy = useMemo(() => new Object3D(), []);
   const groundDummy = useMemo(() => new Object3D(), []);
   const currentLabelRef = useRef("");
+  const lastFrameRef = useRef(0);
 
   const config = useMemo(() => {
-    if (theme === "spring") return { rain: 112, primary: 88, detail: 58, ground: 112 };
-    if (theme === "summer") return { rain: 106, primary: 94, detail: 68, ground: 72 };
-    if (theme === "autumn") return { rain: 118, primary: 106, detail: 82, ground: 96 };
-    return { rain: 132, primary: 86, detail: 70, ground: 102 };
-  }, [theme]);
+    const mobile = quality === "mobile";
+    if (theme === "spring") return mobile ? { rain: 72, primary: 76, detail: 54, ground: 78 } : { rain: 116, primary: 122, detail: 92, ground: 124 };
+    if (theme === "summer") return mobile ? { rain: 68, primary: 62, detail: 42, ground: 48 } : { rain: 106, primary: 94, detail: 68, ground: 72 };
+    if (theme === "autumn") return mobile ? { rain: 74, primary: 68, detail: 48, ground: 62 } : { rain: 118, primary: 106, detail: 82, ground: 96 };
+    return mobile ? { rain: 82, primary: 56, detail: 44, ground: 66 } : { rain: 132, primary: 86, detail: 70, ground: 102 };
+  }, [quality, theme]);
 
   useFrame(({ clock }) => {
+    const minFrame = quality === "mobile" ? 1 / 20 : 1 / 30;
+    if (clock.elapsedTime - lastFrameRef.current < minFrame) return;
+    lastFrameRef.current = clock.elapsedTime;
     const cycle = (clock.elapsedTime * 0.024) % 1;
     const sunI = weatherBand(cycle, 0.06, 0.16);
     const breezeI = weatherBand(cycle, 0.3, 0.2);
@@ -663,6 +683,8 @@ function SeasonalAtmosphere({
       currentLabelRef.current = label;
       onWeatherChange?.(label);
     }
+
+    if (topHide >= 0.985) return;
 
     if (sunGlowRef.current) {
       sunGlowRef.current.position.set(side * 0.22, side * 0.88, -side * 0.18);
@@ -736,11 +758,9 @@ function SeasonalAtmosphere({
       if (!mesh) return;
       for (let i = 0; i < count; i += 1) {
         const seed = i + offset;
-        const fallMultiplier = theme === "spring" ? 0.72 : 1;
-        const drift = ((clock.elapsedTime * (0.4 + hash(seed, 1) * 0.22) * multiplier * fallMultiplier) + hash(seed, 2) * 8) % 8;
-        const windBoost = theme === "spring" ? 0.2 : 0;
-        const wind = Math.sin(clock.elapsedTime * (0.5 + hash(seed, 3) * 0.2) + seed) * (0.18 + windBoost + breezeI * (theme === "spring" ? 0.92 : 0.72));
-        const swirl = Math.cos(clock.elapsedTime * (0.44 + hash(seed, 4) * 0.18) + seed) * (theme === "spring" ? 0.28 + breezeI * 0.22 : 0.1 + breezeI * 0.2);
+        const drift = ((clock.elapsedTime * (0.4 + hash(seed, 1) * 0.22) * multiplier) + hash(seed, 2) * 8) % 8;
+        const wind = Math.sin(clock.elapsedTime * (0.5 + hash(seed, 3) * 0.2) + seed) * (0.18 + breezeI * 0.72);
+        const swirl = Math.cos(clock.elapsedTime * (0.44 + hash(seed, 4) * 0.18) + seed) * (0.1 + breezeI * 0.2);
         const x = (hash(seed, 5) - 0.5) * side * 0.98 + wind;
         const y = 6.1 - drift + Math.sin(clock.elapsedTime * 0.9 + seed) * 0.06;
         const z = (hash(seed, 6) - 0.5) * side * 0.98 + swirl;
@@ -894,122 +914,15 @@ function SeasonalAtmosphere({
 
 
 
-function SpringBlossomShower({ side, progress }: { side: number; progress: number }) {
-  const groupRef = useRef<Group>(null);
-  const petal0Ref = useRef<InstancedMesh>(null);
-  const petal1Ref = useRef<InstancedMesh>(null);
-  const petal2Ref = useRef<InstancedMesh>(null);
-  const petal3Ref = useRef<InstancedMesh>(null);
-  const petal4Ref = useRef<InstancedMesh>(null);
+function SpringFlowerField({ side, quality }: { side: number; quality: RenderQuality }) {
+  const stemRef = useRef<InstancedMesh>(null);
   const centerRef = useRef<InstancedMesh>(null);
+  const petalRef = useRef<InstancedMesh>(null);
+  const leafRef = useRef<InstancedMesh>(null);
   const dummy = useMemo(() => new Object3D(), []);
-  const count = 52;
-
-  useFrame(({ clock }) => {
-    const t = clock.elapsedTime;
-    const topHide = smoothstep(0.72, 0.94, progress);
-    if (groupRef.current) {
-      groupRef.current.position.y = -topHide * 2.2;
-      groupRef.current.visible = topHide < 0.985;
-    }
-    const refs = [petal0Ref.current, petal1Ref.current, petal2Ref.current, petal3Ref.current, petal4Ref.current];
-
-    for (let i = 0; i < count; i += 1) {
-      const seed = i + 1701;
-      const speed = 0.24 + hash(seed, 1) * 0.13;
-      const fall = (t * speed + hash(seed, 2) * 7.5) % 7.5;
-      const baseX = (hash(seed, 3) - 0.5) * side * 0.96;
-      const baseZ = (hash(seed, 4) - 0.5) * side * 0.94;
-      const wind = Math.sin(t * 0.62 + seed * 0.37) * (0.34 + hash(seed, 5) * 0.38);
-      const curl = Math.cos(t * 0.48 + seed * 0.21) * (0.16 + hash(seed, 6) * 0.18);
-      const cx = baseX + wind;
-      const cy = 6.35 - fall + Math.sin(t * 1.12 + seed) * 0.1;
-      const cz = baseZ + curl;
-      const flowerRotation = t * (0.44 + hash(seed, 7) * 0.35) + seed * 0.4;
-      const bloomScale = 1.16 + hash(seed, 8) * 0.58;
-
-      refs.forEach((mesh, petalIndex) => {
-        if (!mesh) return;
-        const angle = flowerRotation + petalIndex * ((Math.PI * 2) / 5);
-        const radius = 0.18 * bloomScale;
-        const px = cx + Math.cos(angle) * radius;
-        const pz = cz + Math.sin(angle) * radius;
-        const flutter = Math.sin(t * 1.7 + seed + petalIndex) * 0.38;
-        setInstance(
-          mesh,
-          i,
-          dummy,
-          px,
-          cy + Math.sin(angle * 2) * 0.018,
-          pz,
-          0.22 * bloomScale,
-          0.064 * bloomScale,
-          0.13 * bloomScale,
-          angle,
-          0.5 + flutter,
-          flutter * 0.7,
-        );
-      });
-
-      setInstance(
-        centerRef.current,
-        i,
-        dummy,
-        cx,
-        cy,
-        cz,
-        0.078 * bloomScale,
-        0.078 * bloomScale,
-        0.078 * bloomScale,
-        flowerRotation,
-        0,
-        0,
-      );
-    }
-
-    refs.forEach((mesh) => {
-      if (!mesh) return;
-      mesh.count = count;
-      mesh.instanceMatrix.needsUpdate = true;
-    });
-    if (centerRef.current) {
-      centerRef.current.count = count;
-      centerRef.current.instanceMatrix.needsUpdate = true;
-    }
-  });
-
-  const petalColors = ["#fff5fb", "#ffd9ef", "#f8b9de", "#ffe6f5", "#f2a4d2"];
-  const refs = [petal0Ref, petal1Ref, petal2Ref, petal3Ref, petal4Ref];
-
-  return (
-    <group ref={groupRef}>
-      {refs.map((ref, index) => (
-        <instancedMesh key={`spring-blossom-petal-${index}`} ref={ref} args={[undefined, undefined, count]}>
-          <sphereGeometry args={[1, 8, 6]} />
-          <meshStandardMaterial
-            color={petalColors[index]}
-            emissive={petalColors[index]}
-            emissiveIntensity={0.12}
-            transparent
-            opacity={0.96}
-            roughness={0.58}
-          />
-        </instancedMesh>
-      ))}
-      <instancedMesh ref={centerRef} args={[undefined, undefined, count]}>
-        <sphereGeometry args={[1, 8, 8]} />
-        <meshStandardMaterial color="#f7da72" emissive="#fff0a8" emissiveIntensity={0.12} roughness={0.54} />
-      </instancedMesh>
-    </group>
-  );
-}
-
-function SeasonalScenery({ theme, side, progress }: { theme: VisualProfile["theme"]; side: number; progress: number }) {
-  const palette = PALETTES[theme];
-  const decorGroupRef = useRef<Group>(null);
-
+  const tempColor = useMemo(() => new Color(), []);
   const edge = side * 0.44;
-  const flowerZones = [
+  const zones = useMemo(() => [
     [-edge * 0.88, -edge * 0.68],
     [edge * 0.82, -edge * 0.62],
     [-edge * 0.94, edge * 0.08],
@@ -1017,7 +930,119 @@ function SeasonalScenery({ theme, side, progress }: { theme: VisualProfile["them
     [-edge * 0.24, edge * 0.94],
     [edge * 0.22, edge * 0.92],
     [0, -edge * 0.96],
-  ] as const;
+  ] as const, [edge]);
+  const flowersPerZone = quality === "mobile" ? 12 : 18;
+  const flowerCount = zones.length * flowersPerZone;
+  const petalCount = flowerCount * 5;
+  const leafCount = flowerCount * 2;
+
+  useEffect(() => {
+    if (!stemRef.current || !centerRef.current || !petalRef.current || !leafRef.current) return;
+    const stemMesh = stemRef.current;
+    const centerMesh = centerRef.current;
+    const petalMesh = petalRef.current;
+    const leafMesh = leafRef.current;
+    const petalColors = ["#fff5fb", "#ffd7ee", "#f5afd8", "#ffe9f6"];
+    let flowerIndex = 0;
+    let petalIndex = 0;
+    let leafIndex = 0;
+
+    zones.forEach(([zoneX, zoneZ], zoneIndex) => {
+      for (let i = 0; i < flowersPerZone; i += 1) {
+        const seed = zoneIndex * 101 + i + 2201;
+        const clusterScale = 0.88 + hash(seed, 1) * 0.5;
+        const x = zoneX + (hash(seed, 2) - 0.5) * 2.05;
+        const z = zoneZ + (hash(seed, 3) - 0.5) * 1.65;
+        const height = 0.16 + hash(seed, 4) * 0.17;
+        const flowerRot = hash(seed, 5) * Math.PI * 2;
+        const bloom = (0.86 + hash(seed, 6) * 0.46) * clusterScale;
+
+        setInstance(stemMesh, flowerIndex, dummy, x, height * 0.5, z, 1, height / 0.16, 1, flowerRot);
+        setInstance(centerMesh, flowerIndex, dummy, x, height + 0.02, z, 0.055 * bloom, 0.042 * bloom, 0.055 * bloom, flowerRot);
+
+        for (let p = 0; p < 5; p += 1) {
+          const angle = flowerRot + p * ((Math.PI * 2) / 5);
+          const radius = 0.086 * bloom;
+          setInstance(
+            petalMesh,
+            petalIndex,
+            dummy,
+            x + Math.cos(angle) * radius,
+            height + 0.024 + Math.sin(p * 1.7) * 0.008,
+            z + Math.sin(angle) * radius,
+            0.078 * bloom,
+            0.028 * bloom,
+            0.048 * bloom,
+            -angle,
+            0.2 + hash(seed, 10 + p) * 0.24,
+            Math.sin(angle) * 0.14,
+          );
+          tempColor.set(petalColors[(zoneIndex + i + p) % petalColors.length]);
+          petalMesh.setColorAt(petalIndex, tempColor);
+          petalIndex += 1;
+        }
+
+        for (let l = 0; l < 2; l += 1) {
+          const sideSign = l === 0 ? -1 : 1;
+          const leafAngle = flowerRot + sideSign * 0.8;
+          setInstance(
+            leafMesh,
+            leafIndex,
+            dummy,
+            x + Math.cos(leafAngle) * 0.045,
+            height * (0.48 + l * 0.13),
+            z + Math.sin(leafAngle) * 0.045,
+            0.052,
+            0.014,
+            0.086,
+            -leafAngle,
+            0.22,
+            sideSign * 0.18,
+          );
+          leafIndex += 1;
+        }
+        flowerIndex += 1;
+      }
+    });
+
+    stemMesh.count = flowerCount;
+    centerMesh.count = flowerCount;
+    petalMesh.count = petalCount;
+    leafMesh.count = leafCount;
+    stemMesh.instanceMatrix.needsUpdate = true;
+    centerMesh.instanceMatrix.needsUpdate = true;
+    petalMesh.instanceMatrix.needsUpdate = true;
+    leafMesh.instanceMatrix.needsUpdate = true;
+    if (petalMesh.instanceColor) petalMesh.instanceColor.needsUpdate = true;
+  }, [dummy, flowerCount, flowersPerZone, leafCount, petalCount, tempColor, zones]);
+
+  return (
+    <group>
+      <instancedMesh ref={stemRef} args={[undefined, undefined, flowerCount]} castShadow={quality === "desktop"}>
+        <cylinderGeometry args={[0.018, 0.024, 0.16, 6]} />
+        <meshStandardMaterial color="#75a85b" roughness={0.78} />
+      </instancedMesh>
+      <instancedMesh ref={leafRef} args={[undefined, undefined, leafCount]} castShadow={false}>
+        <sphereGeometry args={[1, 7, 5]} />
+        <meshStandardMaterial color="#8fc56a" roughness={0.72} />
+      </instancedMesh>
+      <instancedMesh ref={petalRef} args={[undefined, undefined, petalCount]} castShadow={quality === "desktop"}>
+        <sphereGeometry args={[1, 8, 6]} />
+        <meshStandardMaterial color="#ffffff" emissive="#f6badf" emissiveIntensity={0.06} roughness={0.58} />
+      </instancedMesh>
+      <instancedMesh ref={centerRef} args={[undefined, undefined, flowerCount]} castShadow={quality === "desktop"}>
+        <sphereGeometry args={[1, 8, 8]} />
+        <meshStandardMaterial color="#f5d76d" emissive="#fff1ad" emissiveIntensity={0.1} roughness={0.56} />
+      </instancedMesh>
+    </group>
+  );
+}
+
+function SeasonalScenery({ theme, side, progress, quality }: { theme: VisualProfile["theme"]; side: number; progress: number; quality: RenderQuality }) {
+  const palette = PALETTES[theme];
+  const decorGroupRef = useRef<Group>(null);
+
+  const edge = side * 0.44;
   const summerLogs = [
     [-edge * 0.92, -edge * 0.58, 0.92],
     [edge * 0.9, -edge * 0.66, -0.54],
@@ -1060,44 +1085,6 @@ function SeasonalScenery({ theme, side, progress }: { theme: VisualProfile["them
     decorGroupRef.current.position.y = -hide * 2.6;
     decorGroupRef.current.visible = hide < 0.985;
   });
-
-  const FlowerPatch = ({ x, z, scale = 1 }: { x: number; z: number; scale?: number }) => (
-    <group position={[x, 0.028, z]} rotation={[0, (Math.abs(x * 0.02 + z * 0.01)) % Math.PI, 0]}>
-      {Array.from({ length: 18 }).map((_, index) => {
-        const seed = index + x * 0.13 + z * 0.09;
-        const px = Math.sin(seed * 2.1) * 1.02 * scale;
-        const pz = Math.cos(seed * 1.7) * 0.82 * scale;
-        const petalColor = index % 3 === 0 ? "#ffd9ef" : index % 3 === 1 ? "#f3a0cf" : "#fff1f8";
-        return (
-          <group key={`flower-${index}`} position={[px, (index % 2) * 0.015, pz]}>
-            <mesh position={[0, 0.06, 0]} castShadow>
-              <boxGeometry args={[0.024, 0.14, 0.024]} />
-              <meshStandardMaterial color="#7ba857" roughness={0.78} />
-            </mesh>
-            <mesh position={[0, 0.12, 0]} castShadow>
-              <sphereGeometry args={[0.046, 10, 10]} />
-              <meshStandardMaterial color="#f5d768" roughness={0.7} emissive="#fff3b1" emissiveIntensity={0.04} />
-            </mesh>
-            {Array.from({ length: 5 }).map((_, petalIndex) => {
-              const petalAngle = petalIndex * ((Math.PI * 2) / 5);
-              return (
-                <mesh
-                  key={`petal-${petalIndex}`}
-                  position={[Math.cos(petalAngle) * 0.068, 0.13, Math.sin(petalAngle) * 0.068]}
-                  rotation={[0.18, -petalAngle, Math.sin(petalAngle) * 0.18]}
-                  scale={[1.55, 0.56, 0.9]}
-                  castShadow
-                >
-                  <sphereGeometry args={[0.052, 10, 8]} />
-                  <meshStandardMaterial color={petalColor} roughness={0.58} emissive={petalColor} emissiveIntensity={0.07} />
-                </mesh>
-              );
-            })}
-          </group>
-        );
-      })}
-    </group>
-  );
 
   const LeafPatch = ({ x, z, colorA, colorB, scale = 1 }: { x: number; z: number; colorA: string; colorB: string; scale?: number }) => (
     <group position={[x, 0.024, z]} rotation={[0, Math.abs(x + z) * 0.12, 0]}>
@@ -1165,7 +1152,7 @@ function SeasonalScenery({ theme, side, progress }: { theme: VisualProfile["them
 
   return (
     <group ref={decorGroupRef}>
-      {theme === "spring" && <group>{flowerZones.map(([x,z],i)=><FlowerPatch key={`spring-${i}`} x={x} z={z} scale={1+(i%3)*0.12} />)}</group>}
+      {theme === "spring" && <SpringFlowerField side={side} quality={quality} />}
       {theme === "summer" && <group>{summerLogs.map(([x,z,rot],i)=><LogProp key={`summer-${i}`} x={x} z={z} rot={rot} />)}</group>}
       {theme === "autumn" && <group>
         {autumnLeafZones.map(([x,z],i)=><LeafPatch key={`autumn-leaf-${i}`} x={x} z={z} colorA="#ef9d54" colorB="#c95a5c" scale={0.92+(i%2)*0.18} />)}
@@ -1230,24 +1217,32 @@ function HeroTree({ theme }: { theme: VisualProfile["theme"] }) {
   );
 }
 
-function QRForestWorld({ matrix, progress, theme, animationSpeed = 1, onWeatherChange }: QRForest3DProps) {
+function QRForestWorld({ matrix, progress, theme, animationSpeed = 1, onWeatherChange, quality }: QRForest3DProps & { quality: RenderQuality }) {
   const palette = PALETTES[theme];
   const cells = useMemo(() => makeCells(matrix), [matrix]);
   const variantPool = useMemo(() => getVariantsForTheme(theme), [theme]);
+  const renderVariantPool = useMemo(() => variantPool.map((variant) => ({
+    ...variant,
+    dark: partsForQuality(variant.dark, quality),
+    mid: partsForQuality(variant.mid, quality),
+    main: partsForQuality(variant.main, quality),
+    light: partsForQuality(variant.light, quality),
+  })), [quality, variantPool]);
+  const trunkParts = useMemo(() => quality === "mobile" ? TRUNK_PARTS.filter((_, index) => index < 5 || index === 7) : TRUNK_PARTS, [quality]);
   const counts = useMemo(() => {
     let dark = 0;
     let mid = 0;
     let main = 0;
     let light = 0;
     for (const cell of cells) {
-      const variant = variantPool[cell.variantIndex % variantPool.length];
+      const variant = renderVariantPool[cell.variantIndex % renderVariantPool.length];
       dark += variant.dark.length;
       mid += variant.mid.length;
       main += variant.main.length;
       light += variant.light.length;
     }
-    return { trunk: cells.length * TRUNK_PARTS.length, dark, mid, main, light };
-  }, [cells, variantPool]);
+    return { trunk: cells.length * trunkParts.length, dark, mid, main, light };
+  }, [cells, renderVariantPool, trunkParts]);
 
   const n = matrix.length || 21;
   const quiet = 4;
@@ -1271,6 +1266,8 @@ function QRForestWorld({ matrix, progress, theme, animationSpeed = 1, onWeatherC
   const sideMaterialRef = useRef<MeshStandardMaterial>(null);
   const soilMaterialRef = useRef<MeshStandardMaterial>(null);
   const birthAtRef = useRef(0);
+  const lastHeavyFrameRef = useRef(0);
+  const topSettledRef = useRef(false);
 
   const dummy = useMemo(() => new Object3D(), []);
   const groundColor = useMemo(() => new Color(), []);
@@ -1305,6 +1302,20 @@ function QRForestWorld({ matrix, progress, theme, animationSpeed = 1, onWeatherC
       worldRef.current.rotation.y = Math.sin(clock.elapsedTime * 0.08) * 0.03 * (1 - morph);
     }
 
+    const transitioning = progress > 0.015 && progress < 0.985;
+    const minHeavyFrame = transitioning
+      ? quality === "mobile" ? 1 / 22 : 1 / 30
+      : quality === "mobile" ? 1 / 16 : 1 / 24;
+    if (clock.elapsedTime - lastHeavyFrameRef.current < minHeavyFrame) return;
+    lastHeavyFrameRef.current = clock.elapsedTime;
+
+    if (progress > 0.998) {
+      if (topSettledRef.current) return;
+      topSettledRef.current = true;
+    } else {
+      topSettledRef.current = false;
+    }
+
     const updateLeafLayer = (
       mesh: InstancedMesh | null,
       material: MeshStandardMaterial | null,
@@ -1317,7 +1328,7 @@ function QRForestWorld({ matrix, progress, theme, animationSpeed = 1, onWeatherC
       let instanceIndex = 0;
       for (let i = 0; i < cells.length; i += 1) {
         const cell = cells[i];
-        const variant = variantPool[cell.variantIndex % variantPool.length];
+        const variant = renderVariantPool[cell.variantIndex % renderVariantPool.length];
         const parts = variant[layerName];
         const grow = smoother(clamp01((sinceBirth - cell.delay) / 0.82));
         const baseX = cell.col - center + cell.jitterX * organic;
@@ -1356,14 +1367,14 @@ function QRForestWorld({ matrix, progress, theme, animationSpeed = 1, onWeatherC
       let trunkIndex = 0;
       for (let i = 0; i < cells.length; i += 1) {
         const cell = cells[i];
-        const variant = variantPool[cell.variantIndex % variantPool.length];
+        const variant = renderVariantPool[cell.variantIndex % renderVariantPool.length];
         const grow = smoother(clamp01((sinceBirth - cell.delay) / 0.8));
         const baseX = cell.col - center + cell.jitterX * organic;
         const baseZ = cell.row - center + cell.jitterZ * organic;
         const heightScale = cell.height * variant.heightScale * cell.sizeBoost;
         const spread = cell.crown * variant.crownScale * cell.sizeBoost * organic;
-        for (let j = 0; j < TRUNK_PARTS.length; j += 1) {
-          const part = TRUNK_PARTS[j];
+        for (let j = 0; j < trunkParts.length; j += 1) {
+          const part = trunkParts[j];
           const width = part.sx * grow * trunkFade;
           const height = part.sy * heightScale * grow * trunkFade;
           setInstance(
@@ -1441,8 +1452,8 @@ function QRForestWorld({ matrix, progress, theme, animationSpeed = 1, onWeatherC
         intensity={1.95}
         color="#fff8fe"
         castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
+        shadow-mapSize-width={quality === "mobile" ? 512 : 1024}
+        shadow-mapSize-height={quality === "mobile" ? 512 : 1024}
         shadow-camera-near={1}
         shadow-camera-far={side * 4}
         shadow-camera-left={-side}
@@ -1465,7 +1476,7 @@ function QRForestWorld({ matrix, progress, theme, animationSpeed = 1, onWeatherC
           <boxGeometry args={[side - 0.12, 0.18, side - 0.12]} />
           <meshStandardMaterial ref={surfaceMaterialRef} color={initialPalette.ground} roughness={0.92} />
         </mesh>
-        <SeasonalScenery theme={theme} side={side} progress={progress} />
+        <SeasonalScenery theme={theme} side={side} progress={progress} quality={quality} />
 
         {matrix.length === 0 ? (
           <HeroTree theme={theme} />
@@ -1475,19 +1486,19 @@ function QRForestWorld({ matrix, progress, theme, animationSpeed = 1, onWeatherC
               <boxGeometry args={[1, 1, 1]} />
               <meshStandardMaterial ref={trunkMaterialRef} color={initialPalette.trunk} roughness={0.88} transparent />
             </instancedMesh>
-            <instancedMesh ref={leavesDarkRef} args={[undefined, undefined, Math.max(1, counts.dark)]} castShadow receiveShadow>
+            <instancedMesh ref={leavesDarkRef} args={[undefined, undefined, Math.max(1, counts.dark)]} castShadow={quality === "desktop"} receiveShadow={quality === "desktop"}>
               <boxGeometry args={[1, 1, 1]} />
               <meshStandardMaterial ref={leafDarkMaterialRef} color={initialPalette.leafDark} roughness={0.82} transparent />
             </instancedMesh>
-            <instancedMesh ref={leavesMidRef} args={[undefined, undefined, Math.max(1, counts.mid)]} castShadow receiveShadow>
+            <instancedMesh ref={leavesMidRef} args={[undefined, undefined, Math.max(1, counts.mid)]} castShadow={quality === "desktop"} receiveShadow={quality === "desktop"}>
               <boxGeometry args={[1, 1, 1]} />
               <meshStandardMaterial ref={leafMidMaterialRef} color={initialPalette.leafMid} roughness={0.8} transparent />
             </instancedMesh>
-            <instancedMesh ref={leavesMainRef} args={[undefined, undefined, Math.max(1, counts.main)]} castShadow receiveShadow>
+            <instancedMesh ref={leavesMainRef} args={[undefined, undefined, Math.max(1, counts.main)]} castShadow={quality === "desktop"} receiveShadow={quality === "desktop"}>
               <boxGeometry args={[1, 1, 1]} />
               <meshStandardMaterial ref={leafMainMaterialRef} color={initialPalette.leafMain} roughness={0.78} transparent />
             </instancedMesh>
-            <instancedMesh ref={leavesLightRef} args={[undefined, undefined, Math.max(1, counts.light)]} castShadow receiveShadow>
+            <instancedMesh ref={leavesLightRef} args={[undefined, undefined, Math.max(1, counts.light)]} castShadow={quality === "desktop"} receiveShadow={quality === "desktop"}>
               <boxGeometry args={[1, 1, 1]} />
               <meshStandardMaterial ref={leafLightMaterialRef} color={initialPalette.leafLight} roughness={0.76} transparent />
             </instancedMesh>
@@ -1504,23 +1515,37 @@ function QRForestWorld({ matrix, progress, theme, animationSpeed = 1, onWeatherC
         </mesh>
       </group>
 
-      <SeasonalAtmosphere theme={theme} side={side} progress={progress} onWeatherChange={onWeatherChange} />
-      {theme === "spring" && <SpringBlossomShower side={side} progress={progress} />}
+      <SeasonalAtmosphere theme={theme} side={side} progress={progress} quality={quality} onWeatherChange={onWeatherChange} />
     </>
   );
 }
 
 export function QRForest3D({ matrix, progress, theme, animationSpeed = 1, onWeatherChange }: QRForest3DProps) {
+  const [quality, setQuality] = useState<RenderQuality>("desktop");
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 820px), (pointer: coarse)");
+    const updateQuality = () => {
+      const constrainedCpu = typeof navigator.hardwareConcurrency === "number" && navigator.hardwareConcurrency <= 4;
+      setQuality(media.matches || constrainedCpu ? "mobile" : "desktop");
+    };
+    updateQuality();
+    media.addEventListener?.("change", updateQuality);
+    return () => media.removeEventListener?.("change", updateQuality);
+  }, []);
+
+  const effectiveQuality: RenderQuality = matrix.length === 0 ? "mobile" : quality;
+
   return (
     <Canvas
       className="forest3DCanvas"
-      style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
-      dpr={[1, 1.45]}
-      shadows
+      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", touchAction: "pan-y" }}
+      dpr={effectiveQuality === "mobile" ? [0.85, 1.05] : [1, 1.3]}
+      shadows={effectiveQuality === "desktop"}
       camera={{ position: [24, 22, 24], fov: 35, near: 0.1, far: 500 }}
-      gl={{ antialias: true, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer: true }}
+      gl={{ antialias: false, alpha: false, powerPreference: "high-performance", preserveDrawingBuffer: true }}
     >
-      <QRForestWorld matrix={matrix} progress={progress} theme={theme} animationSpeed={animationSpeed} onWeatherChange={onWeatherChange} />
+      <QRForestWorld matrix={matrix} progress={progress} theme={theme} animationSpeed={animationSpeed} onWeatherChange={onWeatherChange} quality={effectiveQuality} />
     </Canvas>
   );
 }
