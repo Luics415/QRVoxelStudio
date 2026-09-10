@@ -2791,3 +2791,263 @@ body::after {
     opacity: .46 !important;
   }
 }
+
+/* v0.17.1 spring + shared read-only interface */
+.v15Page.theme-spring {
+  --season-bg: #eadcf6;
+  --season-soft: rgba(247, 197, 235, 0.58);
+  --season-soft-2: rgba(255, 241, 250, 0.36);
+  --season-bg-overlay: rgba(255, 244, 252, 0.22);
+}
+.v15Page.theme-spring::before {
+  background:
+    radial-gradient(circle at 12% 12%, rgba(255,248,238,.34), transparent 11%),
+    radial-gradient(circle at 88% 14%, rgba(255,248,238,.28), transparent 10%),
+    radial-gradient(circle at 72% 68%, rgba(255,248,238,.31), transparent 13%),
+    radial-gradient(circle at 24% 82%, rgba(255,248,238,.30), transparent 12%),
+    radial-gradient(circle at 12% 24%, rgba(247,197,235,.62), transparent 19%),
+    radial-gradient(circle at 82% 22%, rgba(242,166,220,.30), transparent 16%),
+    radial-gradient(circle at 78% 78%, rgba(247,197,235,.42), transparent 19%),
+    radial-gradient(circle at 34% 68%, rgba(255,232,247,.38), transparent 20%),
+    linear-gradient(180deg, rgba(255,248,253,.28), rgba(255,255,255,.10)),
+    #eadcf6;
+}
+
+.v15AnchorBadge,
+.v17WelcomeIcon,
+.sharedGardenErrorPage img,
+.sharedGeneratorCredit img {
+  border-radius: 50% !important;
+  overflow: hidden;
+}
+.v15AnchorBadge {
+  width: 74px;
+  height: 74px;
+  padding: 5px;
+  background: radial-gradient(circle at 48% 42%, rgba(84,108,148,.88), rgba(34,56,91,.96));
+  box-shadow: 0 12px 30px rgba(42,63,96,.16), inset 0 0 0 1px rgba(255,255,255,.20);
+}
+.v15AnchorBadge img,
+.v17WelcomeIcon img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  border-radius: 50% !important;
+}
+.v17WelcomeIcon {
+  border-radius: 50% !important;
+  padding: 6px;
+  background: radial-gradient(circle at 48% 42%, rgba(84,108,148,.82), rgba(34,56,91,.94));
+}
+
+.sharedGeneratorPage {
+  --season-accent: #f39ad5;
+  --season-accent-rgb: 243, 154, 213;
+  --season-panel: rgba(96, 128, 168, 0.50);
+  --season-mini: rgba(85, 109, 144, 0.74);
+  --season-soft: rgba(247, 197, 235, 0.48);
+  --season-soft-2: rgba(255, 255, 255, 0.28);
+  --season-bg: #b6ddfe;
+  --season-bg-overlay: rgba(255,255,255,0.24);
+  position: relative;
+  isolation: isolate;
+  width: min(1720px, calc(100% - 28px));
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 18px 0 28px;
+  color: #f8fbff;
+}
+.sharedGeneratorPage.theme-spring {
+  --season-accent: #f39ad5;
+  --season-accent-rgb: 243, 154, 213;
+  --season-panel: rgba(104, 129, 165, 0.52);
+  --season-mini: rgba(91, 108, 143, 0.78);
+  --season-soft: rgba(247,197,235,.62);
+  --season-soft-2: rgba(255,236,249,.38);
+  --season-bg: #eadcf6;
+  --season-bg-overlay: rgba(255,244,252,.24);
+}
+.sharedGeneratorPage.theme-summer {
+  --season-accent: #7adf78;
+  --season-accent-rgb: 122,223,120;
+  --season-panel: rgba(93,135,156,.54);
+  --season-mini: rgba(74,116,128,.80);
+  --season-soft: rgba(170,235,192,.36);
+  --season-soft-2: rgba(245,255,230,.23);
+  --season-bg: #b9e7e3;
+  --season-bg-overlay: rgba(250,255,245,.16);
+}
+.sharedGeneratorPage.theme-autumn {
+  --season-accent: #ffab52;
+  --season-accent-rgb: 255,171,82;
+  --season-panel: rgba(131,121,118,.56);
+  --season-mini: rgba(112,95,92,.82);
+  --season-soft: rgba(255,191,123,.34);
+  --season-soft-2: rgba(255,240,225,.24);
+  --season-bg: #d7d7e9;
+  --season-bg-overlay: rgba(255,246,238,.15);
+}
+.sharedGeneratorPage.theme-winter {
+  --season-accent: #eaf7ff;
+  --season-accent-rgb: 234,247,255;
+  --season-panel: rgba(121,141,170,.50);
+  --season-mini: rgba(98,118,150,.82);
+  --season-soft: rgba(230,247,255,.36);
+  --season-soft-2: rgba(255,255,255,.33);
+  --season-bg: #dcecff;
+  --season-bg-overlay: rgba(255,255,255,.26);
+}
+.sharedGeneratorPage::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 10% 12%, rgba(255,248,238,.34), transparent 11%),
+    radial-gradient(circle at 88% 14%, rgba(255,248,238,.27), transparent 10%),
+    radial-gradient(circle at 72% 68%, rgba(255,248,238,.31), transparent 13%),
+    radial-gradient(circle at 24% 82%, rgba(255,248,238,.28), transparent 12%),
+    radial-gradient(circle at 14% 24%, var(--season-soft), transparent 17%),
+    radial-gradient(circle at 82% 24%, rgba(var(--season-accent-rgb), .15), transparent 15%),
+    radial-gradient(circle at 78% 78%, rgba(var(--season-accent-rgb), .18), transparent 18%),
+    radial-gradient(circle at 26% 74%, var(--season-soft-2), transparent 17%),
+    linear-gradient(180deg, var(--season-bg-overlay), rgba(255,255,255,.10)),
+    var(--season-bg);
+  transition: background 760ms cubic-bezier(.22,.8,.26,1);
+}
+.sharedGeneratorPage.theme-spring::before {
+  background:
+    radial-gradient(circle at 10% 12%, rgba(255,248,238,.36), transparent 11%),
+    radial-gradient(circle at 88% 14%, rgba(255,248,238,.30), transparent 10%),
+    radial-gradient(circle at 72% 68%, rgba(255,248,238,.33), transparent 13%),
+    radial-gradient(circle at 24% 82%, rgba(255,248,238,.30), transparent 12%),
+    radial-gradient(circle at 12% 24%, rgba(247,197,235,.62), transparent 19%),
+    radial-gradient(circle at 82% 22%, rgba(242,166,220,.30), transparent 16%),
+    radial-gradient(circle at 78% 78%, rgba(247,197,235,.42), transparent 19%),
+    radial-gradient(circle at 34% 68%, rgba(255,232,247,.38), transparent 20%),
+    linear-gradient(180deg, rgba(255,248,253,.28), rgba(255,255,255,.10)),
+    #eadcf6;
+}
+.sharedGeneratorPage .glassPanel {
+  background: var(--season-panel) !important;
+}
+.sharedGeneratorPage .glassMiniPanel {
+  background: var(--season-mini) !important;
+}
+.sharedGeneratorPage .v15SeasonsPill button.active {
+  color: #243444;
+  background: linear-gradient(180deg, rgba(var(--season-accent-rgb), .96), rgba(var(--season-accent-rgb), .76)) !important;
+  box-shadow: 0 10px 24px rgba(var(--season-accent-rgb), .30), inset 0 0 0 1px rgba(255,255,255,.34) !important;
+}
+.sharedGeneratorHeader {
+  align-items: center;
+}
+.sharedGeneratorBrand {
+  color: inherit;
+  text-decoration: none;
+}
+.sharedGeneratorSignature small {
+  color: rgba(255,255,255,.78);
+}
+.sharedGeneratorWorkspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(640px, 1fr) auto;
+  gap: 18px;
+  margin-top: 18px;
+}
+.sharedGeneratorScene {
+  min-height: 700px;
+}
+.sharedGeneratorBottom {
+  grid-column: 1 !important;
+  grid-row: auto !important;
+}
+.sharedGeneratorCredit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 16px;
+  color: rgba(44,66,94,.62);
+  font-size: .76rem;
+  font-weight: 800;
+}
+.sharedGeneratorCredit img {
+  width: 30px;
+  height: 30px;
+  object-fit: cover;
+}
+.sharedGeneratorPage .v15SceneGlowPink {
+  background: rgba(var(--season-accent-rgb), .26) !important;
+}
+.sharedGeneratorPage .v15LabelIcon,
+.sharedGeneratorPage .scenePulse {
+  color: var(--season-accent) !important;
+}
+.sharedGeneratorPage .v15IconButton:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 1120px) {
+  .sharedGeneratorWorkspace {
+    grid-template-rows: minmax(580px, auto) auto;
+  }
+  .sharedGeneratorHeader {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+  .sharedGeneratorBrand {
+    justify-content: center;
+  }
+  .sharedGeneratorSignature {
+    justify-items: center;
+  }
+}
+
+@media (max-width: 820px) {
+  .sharedGeneratorPage {
+    width: min(100% - 10px, 1720px);
+    padding-top: max(8px, env(safe-area-inset-top));
+  }
+  .sharedGeneratorWorkspace {
+    grid-template-rows: minmax(500px, auto) auto;
+    gap: 12px;
+    margin-top: 12px;
+  }
+  .sharedGeneratorScene {
+    min-height: 500px;
+    border-radius: 28px;
+  }
+  .sharedGeneratorPage .v15HeaderCenter {
+    width: 100%;
+    overflow-x: auto;
+  }
+  .sharedGeneratorPage .v15SeasonsPill {
+    width: max-content;
+    min-width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+  .sharedGeneratorPage .v15SeasonsPill button {
+    flex: 0 0 auto;
+  }
+  .sharedGeneratorPage .v15SceneTopbar {
+    align-items: stretch;
+  }
+  .sharedGeneratorPage .v15ViewSwitch {
+    align-self: flex-end;
+    margin-left: auto;
+  }
+  .sharedGeneratorBottom {
+    grid-template-columns: 1fr !important;
+  }
+  .sharedGeneratorBottom .v15BottomCard + .v15BottomCard {
+    border-left: 0;
+    border-top: 1px solid rgba(255,255,255,.18);
+  }
+}

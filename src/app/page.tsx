@@ -196,7 +196,7 @@ export default function Home() {
   useEffect(() => {
     const colors: Record<VisualProfile["theme"], string> = {
       neutral: "#B6DDFE",
-      spring: "#D6E8F5",
+      spring: "#E8D9F3",
       summer: "#BEE7DC",
       autumn: "#EAD9D2",
       winter: "#D9EAFA",

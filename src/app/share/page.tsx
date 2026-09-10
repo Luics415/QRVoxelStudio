@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { QRMatrixCanvas } from "@/components/qr/qr-matrix-canvas";
 import { QRForest3D } from "@/components/visual/qr-forest-3d";
 import { decodeSharedGarden } from "@/features/share/share-payload";
 import type { QRMatrix, VisualProfile } from "@/models/qr-slot";
@@ -13,18 +14,41 @@ const THEMES: Array<{
   value: VisualProfile["theme"];
   label: string;
   dot: string;
+  glyph: string;
 }> = [
-  { value: "spring", label: "Primavera", dot: "#f2a8cf" },
-  { value: "summer", label: "Verano", dot: "#5cc57b" },
-  { value: "autumn", label: "Otoño", dot: "#ee9b54" },
-  { value: "winter", label: "Invierno", dot: "#e8f7ff" },
+  { value: "spring", label: "Primavera", dot: "#f39ad5", glyph: "✿" },
+  { value: "summer", label: "Verano", dot: "#71d46b", glyph: "❋" },
+  { value: "autumn", label: "Otoño", dot: "#ff9a3d", glyph: "✦" },
+  { value: "winter", label: "Invierno", dot: "#dff4ff", glyph: "❄" },
 ];
 
-function PlayIcon() {
+function IconBase({ children }: { children: ReactNode }) {
+  return <svg viewBox="0 0 24 24" aria-hidden="true">{children}</svg>;
+}
+
+function GridIcon() {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M8.5 6.5v11l9-5.5-9-5.5Z" />
-    </svg>
+    <IconBase>
+      <path d="M5 5h4v4H5zM10 5h4v4h-4zM15 5h4v4h-4zM5 10h4v4H5zM10 10h4v4h-4zM15 10h4v4h-4zM5 15h4v4H5zM10 15h4v4h-4zM15 15h4v4h-4z" />
+    </IconBase>
+  );
+}
+
+function FileIcon() {
+  return (
+    <IconBase>
+      <path d="M7 4.5h6l4 4V19a1.8 1.8 0 0 1-1.8 1.8H7A1.8 1.8 0 0 1 5.2 19V6.3A1.8 1.8 0 0 1 7 4.5Z" />
+      <path d="M13 4.8V9h4.2" />
+    </IconBase>
+  );
+}
+
+function CopyIcon() {
+  return (
+    <IconBase>
+      <rect x="8" y="8" width="10" height="10" rx="2" />
+      <path d="M15 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2" />
+    </IconBase>
   );
 }
 
@@ -34,15 +58,13 @@ export default function SharedGardenPage() {
   const [fileName, setFileName] = useState("Jardín QR");
   const [decodedContent, setDecodedContent] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [playing, setPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [weatherLabel, setWeatherLabel] = useState("Claro suave");
+  const [targetView, setTargetView] = useState<"forest" | "qr">("forest");
+  const [progress, setProgress] = useState(0);
   const progressRef = useRef(0);
   const progressUiStampRef = useRef(0);
   const compactUiRef = useRef(false);
-  const timersRef = useRef<number[]>([]);
   const seasonTimersRef = useRef<number[]>([]);
-  const [targetProgress, setTargetProgress] = useState(0);
   const [seasonTransitionTarget, setSeasonTransitionTarget] = useState<VisualProfile["theme"] | null>(null);
   const [seasonTransitioning, setSeasonTransitioning] = useState(false);
   const activeTheme = seasonTransitionTarget ?? theme;
@@ -74,7 +96,7 @@ export default function SharedGardenPage() {
   useEffect(() => {
     const colors: Record<VisualProfile["theme"], string> = {
       neutral: "#B6DDFE",
-      spring: "#D6E8F5",
+      spring: "#E8D9F3",
       summer: "#BEE7DC",
       autumn: "#EAD9D2",
       winter: "#D9EAFA",
@@ -86,38 +108,31 @@ export default function SharedGardenPage() {
   useEffect(() => {
     let frame = 0;
     let last = performance.now();
+    const target = targetView === "qr" ? 1 : 0;
 
     const tick = (now: number) => {
       const delta = Math.min(0.05, Math.max(0.001, (now - last) / 1000));
       last = now;
       const current = progressRef.current;
       const response = 1 - Math.exp(-delta * 3.5);
-      const next = current + (targetProgress - current) * response;
-      const settled = Math.abs(targetProgress - next) < 0.0015 ? targetProgress : next;
+      const next = current + (target - current) * response;
+      const settled = Math.abs(target - next) < 0.0015 ? target : next;
       progressRef.current = settled;
       const minUiFrameMs = compactUiRef.current ? 46 : 30;
-      if (settled === targetProgress || now - progressUiStampRef.current >= minUiFrameMs) {
+      if (settled === target || now - progressUiStampRef.current >= minUiFrameMs) {
         progressUiStampRef.current = now;
         setProgress(settled);
       }
-      if (settled !== targetProgress) frame = requestAnimationFrame(tick);
+      if (settled !== target) frame = requestAnimationFrame(tick);
     };
 
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [targetProgress]);
+  }, [targetView]);
 
   useEffect(() => {
-    return () => {
-      timersRef.current.forEach((timer) => window.clearTimeout(timer));
-      seasonTimersRef.current.forEach((timer) => window.clearTimeout(timer));
-    };
+    return () => seasonTimersRef.current.forEach((timer) => window.clearTimeout(timer));
   }, []);
-
-  const clearTimers = () => {
-    timersRef.current.forEach((timer) => window.clearTimeout(timer));
-    timersRef.current = [];
-  };
 
   const transitionTheme = (nextTheme: VisualProfile["theme"]) => {
     if (nextTheme === activeTheme) return;
@@ -131,37 +146,6 @@ export default function SharedGardenPage() {
         setSeasonTransitioning(false);
         setSeasonTransitionTarget(null);
       }, 560),
-    );
-  };
-
-  const chooseTheme = (nextTheme: VisualProfile["theme"]) => {
-    clearTimers();
-    setPlaying(false);
-    setTargetProgress(0);
-    transitionTheme(nextTheme);
-  };
-
-  const playGarden = () => {
-    if (!matrix.length) return;
-    clearTimers();
-    setPlaying(true);
-    setTargetProgress(0);
-    transitionTheme("spring");
-
-    timersRef.current.push(
-      window.setTimeout(() => transitionTheme("summer"), 3200),
-      window.setTimeout(() => transitionTheme("autumn"), 6400),
-      window.setTimeout(() => transitionTheme("winter"), 9600),
-      window.setTimeout(() => {
-        setTargetProgress(1);
-      }, 12600),
-      window.setTimeout(() => {
-        setTargetProgress(0);
-      }, 16600),
-      window.setTimeout(() => {
-        transitionTheme("spring");
-        setPlaying(false);
-      }, 19800),
     );
   };
 
@@ -182,65 +166,125 @@ export default function SharedGardenPage() {
   }
 
   return (
-    <main className={`sharedGardenShell theme-${activeTheme}`}>
-      <header className="sharedGardenHeader">
-        <Link href="/" className="sharedBrand">
-          <Image src={`${BASE_PATH}/anchor-studio.png`} alt="Ancla de QR Voxel Studio" width={48} height={48} priority />
-          <div>
-            <strong>QR Voxel Studio</strong>
-            <span>Jardín compartido</span>
+    <main className={`sharedGeneratorPage theme-${activeTheme}`}>
+      <header className="v15Header glassPanel sharedGeneratorHeader">
+        <Link href="/" className="v15BrandBlock sharedGeneratorBrand">
+          <span className="v15AnchorBadge">
+            <Image src={`${BASE_PATH}/anchor-studio.png`} alt="Ancla de QR Voxel Studio" width={58} height={58} priority />
+          </span>
+          <div className="v15BrandCopy">
+            <strong>QR Voxel <span>Studio</span></strong>
+            <small>Voxel trees, estaciones y un QR desde el cielo</small>
           </div>
         </Link>
-        <span className="sharedReadOnlyBadge">Solo para disfrutar</span>
-      </header>
 
-      <section className="sharedGardenStage">
-        <QRForest3D matrix={matrix} progress={progress} theme={theme} animationSpeed={1} onWeatherChange={setWeatherLabel} />
-        <div className="stageGlow stageGlowRose" />
-        <div className="stageGlow stageGlowCyan" />
-        <div className={`sharedSeasonVeil ${seasonTransitioning ? "active" : ""}`} aria-hidden="true" />
-
-        <div className="sharedGardenIdentity">
-          <span className="scenePulse" />
-          <div>
-            <strong>{fileName}</strong>
-            <span>{weatherLabel}</span>
+        <div className="v15HeaderCenter">
+          <div className="v15SeasonsPill" aria-label="Estaciones del jardín compartido">
+            {THEMES.map((season) => (
+              <button
+                key={season.value}
+                type="button"
+                className={activeTheme === season.value ? "active" : ""}
+                onClick={() => transitionTheme(season.value)}
+              >
+                <span className="seasonGlyph" style={{ color: season.dot }}>{season.glyph}</span>
+                <span>{season.label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="sharedSeasonDock">
-          {THEMES.map((season) => (
-            <button
-              key={season.value}
-              type="button"
-              className={activeTheme === season.value ? "active" : ""}
-              onClick={() => chooseTheme(season.value)}
-            >
-              <span style={{ background: season.dot }} />
-              {season.label}
-            </button>
-          ))}
-          <button type="button" className={`sharedPlayButton ${playing ? "active" : ""}`} onClick={playGarden}>
-            <PlayIcon />
-            {playing ? "Reproduciendo" : "Reproducir"}
-          </button>
+        <div className="v15SignatureBlock sharedGeneratorSignature">
+          <strong>Luics415 <span>★</span></strong>
+          <small>SOLO PARA DISFRUTAR</small>
         </div>
+      </header>
+
+      <section className="sharedGeneratorWorkspace">
+        <div className="v15ScenePane glassPanel sharedGeneratorScene">
+          <QRForest3D matrix={matrix} progress={progress} theme={theme} animationSpeed={1} onWeatherChange={setWeatherLabel} />
+          <div className="v15SceneGlow v15SceneGlowPink" />
+          <div className="v15SceneGlow v15SceneGlowWhite" />
+          <div className={`sharedSeasonVeil ${seasonTransitioning ? "active" : ""}`} aria-hidden="true" />
+
+          <div className="v15SceneTopbar">
+            <div className="v15SceneStatus glassMiniPanel">
+              <span className="scenePulse" />
+              <div>
+                <strong>{fileName}</strong>
+                <small>{weatherLabel} · Solo para disfrutar</small>
+              </div>
+            </div>
+
+            <div className="v15ViewSwitch glassMiniPanel" role="group" aria-label="Cambiar vista">
+              <button type="button" className={targetView === "forest" ? "active" : ""} onClick={() => setTargetView("forest")}>Bosque</button>
+              <button type="button" className={targetView === "qr" ? "active" : ""} onClick={() => setTargetView("qr")}>Desde arriba</button>
+            </div>
+          </div>
+        </div>
+
+        <section className="v15BottomPanel glassPanel sharedGeneratorBottom" aria-label="Datos del jardín compartido">
+          <article className="v15BottomCard v15FileCard">
+            <header>
+              <span className="v15LabelIcon"><FileIcon /></span>
+              <div><strong>Archivo</strong></div>
+            </header>
+            <div className="v15FileRow">
+              <div className="v15FilePreview"><FileIcon /></div>
+              <div className="v15FileText">
+                <strong>{fileName}</strong>
+                <span>Jardín compartido</span>
+              </div>
+            </div>
+          </article>
+
+          <article className="v15BottomCard v15MatrixCard">
+            <header>
+              <span className="v15LabelIcon"><GridIcon /></span>
+              <div><strong>Matriz</strong></div>
+            </header>
+            <div className="v15MatrixInfo">
+              <div className="v15MatrixText">
+                <strong>{matrix.length ? `${matrix.length} × ${matrix.length}` : "—"}</strong>
+                <span>{activeModules} módulos activos</span>
+              </div>
+              <div className="v15MatrixPreview">
+                {matrix.length ? <QRMatrixCanvas matrix={matrix} size={84} /> : <span>QR</span>}
+              </div>
+            </div>
+          </article>
+
+          <article className="v15BottomCard v15DecodedCard">
+            <header>
+              <span className="v15LabelIcon"><FileIcon /></span>
+              <div><strong>Contenido decodificado</strong></div>
+            </header>
+            <div className="v15DecodedBox">
+              <span>{decodedContent || "Contenido no disponible"}</span>
+              <button
+                type="button"
+                className="v15IconButton"
+                onClick={async () => {
+                  if (!decodedContent) return;
+                  try {
+                    await navigator.clipboard.writeText(decodedContent);
+                  } catch {
+                    // El jardín sigue siendo de solo lectura si el navegador bloquea el portapapeles.
+                  }
+                }}
+                aria-label="Copiar contenido decodificado"
+                disabled={!decodedContent}
+              >
+                <CopyIcon />
+              </button>
+            </div>
+          </article>
+        </section>
       </section>
 
-      <footer className="sharedGardenFooter">
-        <div>
-          <span>Matriz</span>
-          <strong>{matrix.length ? `${matrix.length} × ${matrix.length}` : "—"}</strong>
-          <small>{activeModules} módulos activos</small>
-        </div>
-        <div className="sharedGardenDecoded">
-          <span>Contenido del QR</span>
-          <strong>{decodedContent || "Contenido no disponible"}</strong>
-        </div>
-        <div className="sharedGardenAttribution">
-          <Image src={`${BASE_PATH}/anchor-studio.png`} alt="" width={28} height={28} />
-          <span>Creado con QR Voxel Studio</span>
-        </div>
+      <footer className="sharedGeneratorCredit">
+        <Image src={`${BASE_PATH}/anchor-studio.png`} alt="" width={28} height={28} />
+        <span>Creado con QR Voxel Studio</span>
       </footer>
     </main>
   );
