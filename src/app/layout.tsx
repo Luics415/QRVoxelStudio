@@ -2,10 +2,10 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 const SITE_URL = "https://luics415.github.io/QRVoxelStudio/";
-const SOCIAL_IMAGE = "brand/qr-voxel-studio-social-v2.jpg";
+const SOCIAL_IMAGE = "https://luics415.github.io/QRVoxelStudio/brand/qr-voxel-studio-social-v2.jpg";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
+  metadataBase: new URL("https://luics415.github.io/"),
   title: "QR Voxel Studio",
   description: "Convierte un QR en un jardín voxel estacional, anímalo y compártelo desde el cielo.",
   applicationName: "QR Voxel Studio",
