@@ -95,6 +95,13 @@ El `basePath` se activa solo dentro de GitHub Actions, por lo que el desarrollo 
 - `gifenc` para crear GIF desde el navegador;
 - GitHub Actions y GitHub Pages para el despliegue.
 
+## Capturas de Pantalla
+
+<img width="618" height="487" alt="image" src="https://github.com/user-attachments/assets/43613fe7-2f90-4edf-afea-ec17c9834e56" />
+<img width="562" height="517" alt="image" src="https://github.com/user-attachments/assets/2a83a660-1af4-45da-b55c-b4887933b751" />
+<img width="1345" height="683" alt="image" src="https://github.com/user-attachments/assets/22df7441-24c7-4df9-ace2-e69f4a2983bd" />
+
+
 ## Almacenamiento y privacidad
 
 La aplicación no utiliza base de datos. La imagen se procesa en el navegador y los enlaces compartidos no contienen el archivo original, sino los datos necesarios para reconstruir el jardín. Por eso no se acumulan QR en GitHub Pages ni existe una tarea de limpieza del servidor.
