@@ -1,0 +1,26 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /qrs/{qrId} {
+      // Cualquier persona puede consultar un QR para resolver su redirección
+      allow read: if true;
+
+      // Creación con validación estricta de esquema y límites de seguridad
+      allow create: if request.resource.data.targetUrl is string
+                    && request.resource.data.targetUrl.size() <= 2048
+                    && (request.resource.data.targetUrl.matches('^https://.*') || request.resource.data.targetUrl.matches('^http://.*'))
+                    && request.resource.data.expiresAt is number
+                    && request.resource.data.expiresAt <= request.time.toMillis() + (366 * 24 * 60 * 60 * 1000)
+                    && request.resource.data.expiresAt >= request.time.toMillis()
+                    && request.resource.data.scanCount == 0
+                    && (request.resource.data.mode == 'direct' || request.resource.data.mode == 'voxel');
+
+      // Solo se permite incrementar el contador de escaneos (inmutable para el resto de datos)
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scanCount'])
+                    && request.resource.data.scanCount == resource.data.scanCount + 1;
+
+      // No se permite eliminación pública
+      allow delete: if false;
+    }
+  }
+}

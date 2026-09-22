@@ -6,6 +6,23 @@ export type QRStatus =
   | "ready"
   | "error";
 
+export type QRExpirationOption = "5m" | "1m" | "3m" | "6m" | "1y";
+
+export type QRBehaviorMode = "direct" | "voxel";
+
+export interface DynamicQRRecord {
+  id: string;
+  targetUrl: string;
+  title: string;
+  mode: QRBehaviorMode;
+  createdAt: number;
+  expiresAt: number;
+  durationKey: QRExpirationOption;
+  scanCount: number;
+  isActive: boolean;
+  voxelTheme: VisualProfile["theme"];
+}
+
 export interface VisualProfile {
   theme: "neutral" | "spring" | "summer" | "autumn" | "winter";
   moduleDepth: number;
@@ -23,6 +40,8 @@ export interface QRSlot {
   status: QRStatus;
   error: string | null;
   visualProfile: VisualProfile;
+  originType?: "file" | "url";
+  dynamicRecord?: DynamicQRRecord | null;
 }
 
 export const defaultVisualProfile: VisualProfile = {
@@ -43,5 +62,7 @@ export function createEmptyQRSlot(): QRSlot {
     status: "empty",
     error: null,
     visualProfile: defaultVisualProfile,
+    originType: "file",
+    dynamicRecord: null,
   };
 }

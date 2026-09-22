@@ -4,10 +4,12 @@ import Image from "next/image";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { QRMatrixCanvas } from "@/components/qr/qr-matrix-canvas";
 import { QRForest3D } from "@/components/visual/qr-forest-3d";
+import { QRCreatePanel } from "@/components/qr/qr-create-panel";
 import { createSharedGardenPayload, makeShareUrl } from "@/features/share/share-payload";
 import { createSceneGif, downloadGif, downloadScenePng, downloadVideoResult, getSceneCanvas, recordSceneVideo } from "@/features/export/export-garden";
+import { buildRedirectUrl, DURATION_LABELS } from "@/features/dynamic-qr/dynamic-qr-service";
 import { useQRSlot } from "@/hooks/use-qr-slot";
-import type { QRMatrix, VisualProfile } from "@/models/qr-slot";
+import type { QRMatrix, VisualProfile, QRExpirationOption, QRBehaviorMode } from "@/models/qr-slot";
 
 const THEMES: Array<{
   value: VisualProfile["theme"];
@@ -141,7 +143,7 @@ function ChevronIcon({ direction }: { direction: "left" | "right" }) {
 }
 
 export default function Home() {
-  const { slot, replaceQR, updateVisualProfile } = useQRSlot();
+  const { slot, replaceQR, createFromUrl, updateVisualProfile } = useQRSlot();
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomPanelRef = useRef<HTMLElement>(null);
   const progressRef = useRef(0);
@@ -159,6 +161,7 @@ export default function Home() {
   const [welcomeVisible, setWelcomeVisible] = useState(true);
   const [guideVisible, setGuideVisible] = useState(false);
   const [uploadHintPulse, setUploadHintPulse] = useState(false);
+  const [creatorModalOpen, setCreatorModalOpen] = useState(false);
   const [exportBusy, setExportBusy] = useState<"video" | "gif" | "image" | null>(null);
   const [seasonTransitioning, setSeasonTransitioning] = useState(false);
   const [seasonTransitionTarget, setSeasonTransitionTarget] = useState<VisualProfile["theme"] | null>(null);
@@ -166,7 +169,6 @@ export default function Home() {
   const [previewVideoBusy, setPreviewVideoBusy] = useState(false);
 
   const hasActualQR = slot.qrMatrix.length > 0;
-  const qrClearMode = hasActualQR && (targetView === "qr" || progress > 0.82);
   const sceneMatrix = hasActualQR ? slot.qrMatrix : [];
   const displayMatrix = hasActualQR ? slot.qrMatrix : DEMO_MATRIX;
   const activeUiTheme = seasonTransitionTarget ?? slot.visualProfile.theme;
@@ -175,8 +177,12 @@ export default function Home() {
     [displayMatrix],
   );
   const displayUrl = slot.decodedContent || DEMO_URL;
-  const displayFileName = slot.originalFile?.name || DEMO_FILE_NAME;
-  const displayFileMeta = slot.originalFile
+  const displayFileName = slot.dynamicRecord
+    ? slot.dynamicRecord.title || "QR Temporal"
+    : slot.originalFile?.name || DEMO_FILE_NAME;
+  const displayFileMeta = slot.dynamicRecord
+    ? `${slot.dynamicRecord.mode === "direct" ? "⚡ Directo" : "🌸 Dinámico Voxel"} · ${DURATION_LABELS[slot.dynamicRecord.durationKey] || "Temporal"}`
+    : slot.originalFile
     ? `${(slot.originalFile.type || "PNG").replace("image/", "").toUpperCase()} - ${formatFileSize(slot.originalFile.size)}`
     : DEMO_FILE_META;
 
@@ -279,11 +285,18 @@ export default function Home() {
     }, 80);
   };
 
-  const handleEnterGarden = () => {
+  const handleEnterGarden = (openGuide = true) => {
     setWelcomeVisible(false);
-    if (!hasActualQR) {
-      window.setTimeout(() => setGuideVisible(true), 180);
+    if (!hasActualQR && openGuide) {
+      timersRef.current.push(window.setTimeout(() => setGuideVisible(true), 180));
     }
+  };
+
+  const openCreatorModal = () => {
+    timersRef.current.forEach((timer) => window.clearTimeout(timer));
+    timersRef.current = [];
+    setGuideVisible(false);
+    setCreatorModalOpen(true);
   };
 
   const handleThemeChange = (theme: VisualProfile["theme"]) => {
@@ -315,10 +328,29 @@ export default function Home() {
     await replaceQR(file);
   };
 
+  const handleCreateFromUrl = async (options: {
+    targetUrl: string;
+    durationKey: QRExpirationOption;
+    mode: QRBehaviorMode;
+    title?: string;
+  }) => {
+    clearShowcaseTimers();
+    setShareFeedback("");
+    clearPreviewVideo();
+    setGuideVisible(false);
+    setUploadHintPulse(false);
+    progressRef.current = 0;
+    setProgress(0);
+    setTargetView("forest");
+    const record = await createFromUrl(options);
+    setCreatorModalOpen(false);
+    setShareFeedback(`¡QR creado exitosamente! Vigencia: ${DURATION_LABELS[options.durationKey]}`);
+    return record;
+  };
 
   const createPreviewVideo = async () => {
     if (!hasActualQR || previewVideoBusy || exportBusy !== null) {
-      if (!hasActualQR) setShareFeedback("Adjunta un QR para crear la vista previa de video.");
+      if (!hasActualQR) setShareFeedback("Adjunta o crea un QR para crear la vista previa de video.");
       return;
     }
 
@@ -334,7 +366,7 @@ export default function Home() {
 
     try {
       const duration = runExportSequence("gif");
-      const result = await recordSceneVideo(canvas, duration, compactUiRef.current ? 18 : 24);
+      const result = await recordSceneVideo(canvas, duration, compactUiRef.current ? 18 : 24, false);
       const url = URL.createObjectURL(result.blob);
       previewVideoUrlRef.current = url;
       setPreviewVideoUrl(url);
@@ -352,6 +384,9 @@ export default function Home() {
 
   const buildShareUrl = () => {
     if (typeof window === "undefined" || !hasActualQR) return "";
+    if (slot.dynamicRecord) {
+      return buildRedirectUrl(slot.dynamicRecord.id, slot.dynamicRecord);
+    }
     const payload = createSharedGardenPayload({
       matrix: displayMatrix,
       fileName: displayFileName,
@@ -440,11 +475,11 @@ export default function Home() {
       }
 
       if (action === "video") {
-        setShareFeedback("Grabando Primavera → Verano → Otoño → Invierno → QR…");
+        setShareFeedback("Grabando Primavera → Verano → Otoño → Invierno → QR con música ambiental…");
         const duration = runExportSequence("video");
-        const result = await recordSceneVideo(canvas, duration, 30);
+        const result = await recordSceneVideo(canvas, duration, 30, true);
         downloadVideoResult(result, `${safeBase}-animado`);
-        setShareFeedback(`Video ${result.extension.toUpperCase()} exportado.`);
+        setShareFeedback(`Video ${result.extension.toUpperCase()} con música ambiental exportado.`);
         return;
       }
 
@@ -540,7 +575,7 @@ export default function Home() {
           <div className="v15SceneGlow v15SceneGlowWhite" />
           <div className={`v17SeasonVeil ${seasonTransitioning ? "active" : ""}`} aria-hidden="true" />
 
-          <div className={`v15SceneTopbar ${qrClearMode ? "qrHidden" : ""}`}>
+          <div className="v15SceneTopbar">
             <div className="v15SceneStatus glassMiniPanel">
               <span className="scenePulse" />
               <div>
@@ -579,13 +614,6 @@ export default function Home() {
             </div>
           )}
         </div>
-
-        {qrClearMode && (
-          <div className="v18QrToolbar glassMiniPanel" role="group" aria-label="Cambiar vista del jardín">
-            <button type="button" className={targetView === "forest" ? "active" : ""} onClick={() => setTargetView("forest")}>Bosque</button>
-            <button type="button" className={targetView === "qr" ? "active" : ""} onClick={() => setTargetView("qr")}>Desde arriba</button>
-          </div>
-        )}
 
         {shareSidebarOpen ? (
           <aside className="v15Sidebar glassPanel" aria-label="Compartir tu jardín">
@@ -721,15 +749,24 @@ export default function Home() {
               <div className="v15FileText">
                 <strong>{displayFileName}</strong>
                 <span>{displayFileMeta}</span>
+                {slot.dynamicRecord && (
+                  <small style={{ display: "block", color: "var(--ink-soft)", marginTop: "3px" }}>
+                    {slot.dynamicRecord.scanCount} escaneos · Expira: {new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(slot.dynamicRecord.expiresAt))}
+                  </small>
+                )}
               </div>
-              <button type="button" className={`v15InlineAction ${uploadHintPulse ? "guideTarget" : ""}`} onClick={() => inputRef.current?.click()}>
+              <button
+                type="button"
+                className={`v15InlineAction ${uploadHintPulse ? "guideTarget" : ""}`}
+                onClick={() => setCreatorModalOpen(true)}
+              >
                 <UploadIcon />
-                <span>Cambiar</span>
+                <span>Crear / Cambiar</span>
               </button>
             </div>
             {!hasActualQR && (
               <div className={`v18UploadGuideInline ${uploadHintPulse ? "active" : ""}`}>
-                Aquí adjuntas tu QR. Si estás en celular, baja un poco y toca <strong>Cambiar</strong>.
+                Crea un QR con vigencia desde una URL o sube una imagen existente. Toca <strong>Crear / Cambiar</strong>.
               </div>
             )}
           </article>
@@ -767,12 +804,12 @@ export default function Home() {
                 onClick={async () => {
                   try {
                     await navigator.clipboard.writeText(displayUrl);
-                    setShareFeedback("Contenido decodificado copiado.");
+                    setShareFeedback("Enlace copiado al portapapeles.");
                   } catch {
-                    setShareFeedback("No pudimos copiar el contenido decodificado.");
+                    setShareFeedback("No pudimos copiar el enlace.");
                   }
                 }}
-                aria-label="Copiar contenido decodificado"
+                aria-label="Copiar enlace"
               >
                 <CopyIcon />
               </button>
@@ -789,15 +826,72 @@ export default function Home() {
             </span>
             <span className="v17WelcomeEyebrow">BIENVENIDO A</span>
             <h1>QR Voxel Studio</h1>
-            <p>Convierte un QR en un jardín voxel estacional, anímalo y compártelo desde el cielo.</p>
-            <button type="button" onClick={handleEnterGarden}>
-              Entrar al jardín
-            </button>
+            <p>Genera códigos QR temporales desde URL con vigencia de hasta 1 año o convierte tu imagen QR en un jardín voxel animado.</p>
+            <div style={{ display: "flex", gap: "10px", justifyContent: "center", flexWrap: "wrap", width: "100%" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  handleEnterGarden(false);
+                  openCreatorModal();
+                }}
+                style={{
+                  background: "linear-gradient(135deg, #c96ab8 0%, #7d65b6 100%)",
+                  color: "#fff",
+                  boxShadow: "0 4px 14px rgba(201, 106, 184, 0.4)",
+                }}
+              >
+                ✨ Crear QR desde URL
+              </button>
+              <button type="button" onClick={() => handleEnterGarden(true)} style={{ background: "rgba(255,255,255,0.25)" }}>
+                Explorar el jardín
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {guideVisible && !hasActualQR && (
+      {creatorModalOpen && (
+        <div
+          className="qrCreatorModalOverlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Crear o reemplazar código QR"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setCreatorModalOpen(false);
+          }}
+        >
+          <div className="qrCreatorModalCard glassPanel">
+            <div className="qrCreatorModalHeader">
+              <div className="modalHeaderTitleBlock">
+                <span className="modalHeaderIcon">✨</span>
+                <div>
+                  <h2>Crear o Reemplazar QR</h2>
+                  <p>Genera un QR temporal con destino dinámico o sube tu imagen</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="modalCloseBtn"
+                onClick={() => setCreatorModalOpen(false)}
+                aria-label="Cerrar modal"
+              >
+                ✕
+              </button>
+            </div>
+            <QRCreatePanel
+              onFileSelect={async (file) => {
+                setCreatorModalOpen(false);
+                await handleFile(file);
+              }}
+              onCreateFromUrl={handleCreateFromUrl}
+              currentDynamicRecord={slot.dynamicRecord}
+              busy={slot.status === "loading"}
+            />
+          </div>
+        </div>
+      )}
+
+      {guideVisible && !hasActualQR && !creatorModalOpen && (
         <div className="v18GuideOverlay" role="dialog" aria-modal="true" aria-label="Guía rápida para adjuntar un QR">
           <div className="v18GuideCard">
             <span className="v18GuideEyebrow">GUÍA RÁPIDA</span>

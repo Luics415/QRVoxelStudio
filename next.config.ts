@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const isGitHubPages = process.env.GITHUB_ACTIONS === "true";
-const basePath = isGitHubPages ? "/QRVoxelStudio" : "";
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? (isGitHubPages ? "/QRVoxelStudio" : "");
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,

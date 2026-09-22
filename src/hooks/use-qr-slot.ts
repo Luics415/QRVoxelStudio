@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { processQRFile } from "@/features/qr-engine/process-qr";
+import { reconstructQRMatrix } from "@/features/qr-engine/reconstruct-qr";
+import {
+  buildRedirectUrl,
+  createTemporalQR,
+  type CreateDynamicQROptions,
+} from "@/features/dynamic-qr/dynamic-qr-service";
 import {
   createEmptyQRSlot,
   type QRSlot,
@@ -37,6 +43,8 @@ export function useQRSlot() {
 
         return {
           ...current,
+          originType: "file",
+          dynamicRecord: null,
           originalFile: file,
           originalPreviewUrl: previewUrl,
           decodedContent: processed.decodedContent,
@@ -44,7 +52,6 @@ export function useQRSlot() {
           version: current.version + 1,
           status: "ready",
           error: null,
-          // visualProfile se conserva deliberadamente.
         };
       });
     } catch (error) {
@@ -56,6 +63,53 @@ export function useQRSlot() {
       }));
     }
   }, []);
+
+  const createFromUrl = useCallback(async (options: CreateDynamicQROptions) => {
+    setSlot((current) => ({
+      ...current,
+      status: "loading",
+      error: null,
+    }));
+
+    try {
+      const record = await createTemporalQR({
+        ...options,
+        voxelTheme: slot.visualProfile.theme,
+      });
+
+      const redirectUrl = buildRedirectUrl(record.id, record);
+      const matrix = reconstructQRMatrix(redirectUrl);
+
+      setSlot((current) => {
+        if (current.originalPreviewUrl) {
+          URL.revokeObjectURL(current.originalPreviewUrl);
+        }
+
+        return {
+          ...current,
+          originType: "url",
+          dynamicRecord: record,
+          originalFile: null,
+          originalPreviewUrl: null,
+          decodedContent: redirectUrl,
+          qrMatrix: matrix,
+          version: current.version + 1,
+          status: "ready",
+          error: null,
+        };
+      });
+
+      return record;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error al crear el código QR.";
+      setSlot((current) => ({
+        ...current,
+        status: "error",
+        error: message,
+      }));
+      throw error;
+    }
+  }, [slot.visualProfile.theme]);
 
   const updateVisualProfile = useCallback((patch: Partial<VisualProfile>) => {
     setSlot((current) => ({
@@ -84,6 +138,7 @@ export function useQRSlot() {
   return {
     slot,
     replaceQR,
+    createFromUrl,
     updateVisualProfile,
     resetQR,
   };

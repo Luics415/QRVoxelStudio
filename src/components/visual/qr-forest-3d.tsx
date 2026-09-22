@@ -586,7 +586,7 @@ function moduleTarget(index: number, total: number) {
 }
 
 function CameraRig({ progress, side }: { progress: number; side: number }) {
-  const { camera, pointer } = useThree();
+  const { camera, pointer, size } = useThree();
   const forestPosition = useMemo(() => new Vector3(), []);
   const topPosition = useMemo(() => new Vector3(), []);
   const mixedUp = useMemo(() => new Vector3(), []);
@@ -597,16 +597,28 @@ function CameraRig({ progress, side }: { progress: number; side: number }) {
   useFrame(() => {
     const t = smoother(progress);
     const pointerFade = 1 - smoothstep(0.52, 0.9, t);
+
+    // Dynamic aspect ratio calculation to prevent mobile portrait clipping and topbar overlap
+    const aspect = size.width / Math.max(1, size.height);
+    const isPortrait = aspect < 0.95;
+    const portraitScale = isPortrait ? Math.min(2.0, Math.max(1.15, 0.95 / aspect)) : 1.0;
+    const topDistance = side * 2.45 * portraitScale;
+    const topZOffset = isPortrait ? -side * 0.25 : 0;
+
     forestPosition.set(
       side * 0.96 + pointer.x * 1.12 * pointerFade,
       side * 0.82 + 4.4 + pointer.y * 0.72 * pointerFade,
       side * 1.04 + pointer.x * 0.42 * pointerFade,
     );
-    topPosition.set(0, side * 2.18, 0.01);
+    topPosition.set(0, topDistance, topZOffset + 0.01);
     camera.position.lerpVectors(forestPosition, topPosition, t);
     mixedUp.lerpVectors(forestUp, topUp, t).normalize();
     camera.up.copy(mixedUp);
-    camera.lookAt(0, t < 0.7 ? 0.58 * (1 - t) : 0, 0);
+
+    const lookTargetY = t < 0.7 ? 0.58 * (1 - t) : 0;
+    const lookTargetZ = t * topZOffset;
+    camera.lookAt(0, lookTargetY, lookTargetZ);
+
     const perspective = camera as PerspectiveCamera;
     if (typeof perspective.fov === "number") {
       const nextFov = lerp(35, 28, t);
@@ -692,7 +704,7 @@ function SeasonalAtmosphere({
       sunGlowRef.current.scale.setScalar(1 + (sunI + breezeI * 0.24) * 0.22);
       sunGlowRef.current.visible = sunI > 0.02 || breezeI > 0.06;
       sunGlowRef.current.children.forEach((child, index) => {
-        const material = (child as any).material as MeshBasicMaterial | undefined;
+        const material = (child as unknown as { material?: MeshBasicMaterial }).material;
         if (material) {
           material.opacity = index === 0 ? 0.14 + sunI * 0.22 : 0.09 + (sunI + breezeI * 0.32) * 0.14;
         }
@@ -1273,7 +1285,7 @@ function QRForestWorld({ matrix, progress, theme, animationSpeed = 1, onWeatherC
   const groundColor = useMemo(() => new Color(), []);
   const paperColor = useMemo(() => new Color(), []);
   const mixedGround = useMemo(() => new Color(), []);
-  const initialPalette = useRef(palette).current;
+  const initialPalette = palette;
   const targetTrunk = useMemo(() => new Color(palette.trunk), [palette.trunk]);
   const targetLeafDark = useMemo(() => new Color(palette.leafDark), [palette.leafDark]);
   const targetLeafMid = useMemo(() => new Color(palette.leafMid), [palette.leafMid]);

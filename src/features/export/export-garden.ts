@@ -1,6 +1,9 @@
+import { createAmbientAudioSession, type AmbientAudioSession } from "./audio-synthesizer";
+
 export type VideoExportResult = {
   blob: Blob;
   extension: "mp4" | "webm";
+  hasAudio: boolean;
 };
 
 export type GifExportOptions = {
@@ -17,10 +20,10 @@ function downloadBlob(blob: Blob, filename: string) {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1200);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
-export function getSceneCanvas(rootSelector = ".v15ScenePane") {
+export function getSceneCanvas(rootSelector = ".v15ScenePane"): HTMLCanvasElement | null {
   return document.querySelector(`${rootSelector} canvas`) as HTMLCanvasElement | null;
 }
 
@@ -37,55 +40,120 @@ export function downloadScenePng(canvas: HTMLCanvasElement, filename = "qr-voxel
   });
 }
 
-function pickVideoMimeType() {
-  if (typeof MediaRecorder === "undefined") return null;
-  const candidates = [
-    "video/mp4;codecs=avc1.42E01E",
-    "video/mp4",
+function pickVideoMimeType(withAudio = true): string {
+  if (typeof MediaRecorder === "undefined") return "";
+
+  const candidatesWithAudio = [
+    "video/webm;codecs=vp9,opus",
+    "video/webm;codecs=vp8,opus",
     "video/webm;codecs=vp9",
     "video/webm;codecs=vp8",
     "video/webm",
+    "video/mp4",
   ];
-  return candidates.find((candidate) => MediaRecorder.isTypeSupported(candidate)) ?? "";
+
+  const candidatesWithoutAudio = [
+    "video/webm;codecs=vp9",
+    "video/webm;codecs=vp8",
+    "video/webm",
+    "video/mp4",
+  ];
+
+  const candidates = withAudio ? candidatesWithAudio : candidatesWithoutAudio;
+  return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || "";
 }
 
+/**
+ * Graba el jardín 3D como video con sincronización fluida y música ambiental sintetizada.
+ */
 export async function recordSceneVideo(
   canvas: HTMLCanvasElement,
-  durationMs = 7600,
+  durationMs = 13200,
   fps = 30,
+  includeMusic = true,
 ): Promise<VideoExportResult> {
   if (!("captureStream" in canvas) || typeof MediaRecorder === "undefined") {
-    throw new Error("Este navegador todavía no permite grabar el jardín como video.");
+    throw new Error("Este navegador no dispone de soporte para grabar el jardín en video.");
   }
 
-  const mimeType = pickVideoMimeType();
-  if (mimeType === null) throw new Error("Este navegador no dispone de MediaRecorder.");
+  // Capturar el stream de video del canvas WebGL
+  const canvasStream = canvas.captureStream(fps);
+  if (!canvasStream || canvasStream.getVideoTracks().length === 0) {
+    throw new Error("No se pudo iniciar la captura visual del lienzo.");
+  }
 
-  const stream = canvas.captureStream(fps);
+  // Generar pista de audio ambiental relajante
+  let audioSession: AmbientAudioSession | null = null;
+  if (includeMusic) {
+    audioSession = createAmbientAudioSession(durationMs);
+  }
+
+  const tracks: MediaStreamTrack[] = [...canvasStream.getVideoTracks()];
+  if (audioSession?.track) {
+    tracks.push(audioSession.track);
+  }
+
+  const combinedStream = new MediaStream(tracks);
+  const mimeType = pickVideoMimeType(Boolean(audioSession?.track));
+  const options: MediaRecorderOptions = {
+    videoBitsPerSecond: 6_000_000,
+  };
+  if (mimeType) {
+    options.mimeType = mimeType;
+  }
+
+  const recorder = new MediaRecorder(combinedStream, options);
   const chunks: BlobPart[] = [];
-  const recorder = new MediaRecorder(stream, mimeType ? { mimeType, videoBitsPerSecond: 7_000_000 } : undefined);
 
-  const finished = new Promise<Blob>((resolve, reject) => {
+  const recordingPromise = new Promise<Blob>((resolve, reject) => {
     recorder.ondataavailable = (event) => {
-      if (event.data.size > 0) chunks.push(event.data);
+      if (event.data && event.data.size > 0) {
+        chunks.push(event.data);
+      }
     };
-    recorder.onerror = () => reject(new Error("La grabación del video se interrumpió."));
+
+    recorder.onerror = () => {
+      audioSession?.stop();
+      reject(new Error("La grabación del video se interrumpió inesperadamente."));
+    };
+
     recorder.onstop = () => {
-      const type = recorder.mimeType || mimeType || "video/webm";
-      resolve(new Blob(chunks, { type }));
+      audioSession?.stop();
+      const outputType = recorder.mimeType || mimeType || "video/webm";
+      resolve(new Blob(chunks, { type: outputType }));
     };
   });
 
+  // Empezar grabación emitiendo bloques cada 250ms
   recorder.start(250);
+
+  // Detener de forma limpia al cumplirse la duración
   window.setTimeout(() => {
-    if (recorder.state !== "inactive") recorder.stop();
+    if (recorder.state !== "inactive") {
+      try {
+        recorder.stop();
+      } catch {
+        // Ignorar
+      }
+    }
   }, durationMs);
 
-  const blob = await finished;
-  stream.getTracks().forEach((track) => track.stop());
+  const blob = await recordingPromise;
+
+  // Limpiar todas las pistas del stream
+  combinedStream.getTracks().forEach((track) => {
+    try {
+      track.stop();
+    } catch {
+      // Ignorar
+    }
+  });
+
+  const isMp4 = blob.type.includes("mp4");
   return {
     blob,
-    extension: blob.type.includes("mp4") ? "mp4" : "webm",
+    extension: isMp4 ? "mp4" : "webm",
+    hasAudio: Boolean(audioSession?.track),
   };
 }
 

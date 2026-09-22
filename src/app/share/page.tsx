@@ -62,7 +62,6 @@ export default function SharedGardenPage() {
   const [targetView, setTargetView] = useState<"forest" | "qr">("forest");
   const [progress, setProgress] = useState(0);
   const progressRef = useRef(0);
-  const qrClearMode = targetView === "qr" || progress > 0.82;
   const progressUiStampRef = useRef(0);
   const compactUiRef = useRef(false);
   const seasonTimersRef = useRef<number[]>([]);
@@ -71,17 +70,19 @@ export default function SharedGardenPage() {
   const activeTheme = seasonTransitionTarget ?? theme;
 
   useEffect(() => {
-    try {
-      const encoded = new URLSearchParams(window.location.search).get("garden");
-      if (!encoded) throw new Error("Este enlace no contiene un jardín QR.");
-      const decoded = decodeSharedGarden(encoded);
-      setMatrix(decoded.matrix);
-      setTheme(decoded.payload.theme || "spring");
-      setFileName(decoded.payload.fileName || "Jardín QR");
-      setDecodedContent(decoded.payload.decodedContent);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "No pudimos abrir este jardín.");
-    }
+    queueMicrotask(() => {
+      try {
+        const encoded = new URLSearchParams(window.location.search).get("garden");
+        if (!encoded) throw new Error("Este enlace no contiene un jardín QR.");
+        const decoded = decodeSharedGarden(encoded);
+        setMatrix(decoded.matrix);
+        setTheme(decoded.payload.theme || "spring");
+        setFileName(decoded.payload.fileName || "Jardín QR");
+        setDecodedContent(decoded.payload.decodedContent);
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "No pudimos abrir este jardín.");
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -208,7 +209,7 @@ export default function SharedGardenPage() {
           <div className="v15SceneGlow v15SceneGlowWhite" />
           <div className={`sharedSeasonVeil ${seasonTransitioning ? "active" : ""}`} aria-hidden="true" />
 
-          <div className={`v15SceneTopbar ${qrClearMode ? "qrHidden" : ""}`}>
+          <div className="v15SceneTopbar">
             <div className="v15SceneStatus glassMiniPanel">
               <span className="scenePulse" />
               <div>
@@ -223,13 +224,6 @@ export default function SharedGardenPage() {
             </div>
           </div>
         </div>
-
-        {qrClearMode && (
-          <div className="v18QrToolbar glassMiniPanel" role="group" aria-label="Cambiar vista del jardín compartido">
-            <button type="button" className={targetView === "forest" ? "active" : ""} onClick={() => setTargetView("forest")}>Bosque</button>
-            <button type="button" className={targetView === "qr" ? "active" : ""} onClick={() => setTargetView("qr")}>Desde arriba</button>
-          </div>
-        )}
 
         <section className="v15BottomPanel glassPanel sharedGeneratorBottom" aria-label="Datos del jardín compartido">
           <article className="v15BottomCard v15FileCard">
