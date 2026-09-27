@@ -8,6 +8,7 @@ import { QRCreatePanel } from "@/components/qr/qr-create-panel";
 import { createSharedGardenPayload, makeShareUrl } from "@/features/share/share-payload";
 import { createSceneGif, downloadGif, downloadScenePng, downloadVideoResult, getSceneCanvas, recordSceneVideo } from "@/features/export/export-garden";
 import { buildRedirectUrl, DURATION_LABELS } from "@/features/dynamic-qr/dynamic-qr-service";
+import { getRootHref } from "@/lib/navigation";
 import { useQRSlot } from "@/hooks/use-qr-slot";
 import type { QRMatrix, VisualProfile, QRExpirationOption, QRBehaviorMode } from "@/models/qr-slot";
 
@@ -499,17 +500,30 @@ export default function Home() {
     }
   };
 
+  const rootHref = getRootHref();
+
+  const handleBrandClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!hasActualQR) {
+      event.preventDefault();
+      openCreatorModal();
+    }
+  };
+
   const openSharedView = () => {
     const url = buildShareUrl();
     if (!url) return;
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-
   return (
     <main className={`v15Page theme-${activeUiTheme} ${hasActualQR ? "" : "theme-pre-qr"}`}>
       <header className="v15Header glassPanel">
-        <div className="v15BrandBlock">
+        <a
+          href={rootHref}
+          className="v15BrandBlock"
+          onClick={handleBrandClick}
+          title={hasActualQR ? "Volver al generador inicial de QR Voxel" : "Crear un nuevo QR Voxel"}
+        >
           <span className="v15AnchorBadge">
             <Image src={`${BASE_PATH}/anchor-studio.png`} alt="Ancla de QR Voxel Studio" width={58} height={58} priority />
           </span>
@@ -518,7 +532,7 @@ export default function Home() {
             <strong>QR Voxel <span>Studio</span></strong>
             <small>Voxel trees, estaciones y un QR desde el cielo</small>
           </div>
-        </div>
+        </a>
 
         <div className="v15HeaderCenter">
           <div className="v15SeasonsPill" aria-label="Estaciones">

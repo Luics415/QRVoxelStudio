@@ -1143,6 +1143,17 @@ a { color: inherit; }
   align-items: center;
   gap: 14px;
   min-width: 0;
+  text-decoration: none !important;
+  color: inherit !important;
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+.v15BrandBlock:hover {
+  transform: translateY(-2px);
+  opacity: 0.96;
+}
+.v15BrandBlock:active {
+  transform: scale(0.98);
 }
 .v15AnchorBadge {
   width: 74px;
@@ -1152,6 +1163,12 @@ a { color: inherit; }
   border-radius: 22px;
   background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
   overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+.v15BrandBlock:hover .v15AnchorBadge {
+  transform: scale(1.06) rotate(-3deg);
+  box-shadow: 0 8px 24px rgba(243, 154, 213, 0.4);
 }
 .v15AnchorBadge img { width: 100%; height: 100%; object-fit: cover; }
 .v15BrandCopy {

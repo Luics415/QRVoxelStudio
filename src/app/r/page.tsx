@@ -2,9 +2,9 @@
 
 import { Suspense, useEffect, useState, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import Image from "next/image";
 import { resolveQR, trackScan, type ResolvedQRResult } from "@/features/dynamic-qr/dynamic-qr-service";
+import { getRootHref } from "@/lib/navigation";
 import { reconstructQRMatrix } from "@/features/qr-engine/reconstruct-qr";
 import { QRForest3D } from "@/components/visual/qr-forest-3d";
 import { ExpiredQRView } from "@/components/qr/expired-qr-view";
@@ -166,16 +166,16 @@ function RedirectHandler() {
 
   // Si no se encontró el QR
   if (!resolution || resolution.status === "not_found" || !resolution.record) {
-    const homeHref = BASE_PATH ? `${BASE_PATH}/` : "/";
+    const homeHref = getRootHref();
     return (
       <div className="redirectLoadingContainer">
         <div className="glassPanel redirectLoadingCard">
           <span className="errorOrb">⚠️</span>
           <h2>Código QR no encontrado</h2>
           <p>El código solicitado no existe o fue removido.</p>
-          <Link href={homeHref} className="btnPrimary glowButton">
+          <a href={homeHref} className="btnPrimary glowButton">
             Ir a QR Voxel Studio
-          </Link>
+          </a>
         </div>
       </div>
     );
@@ -211,12 +211,12 @@ function RedirectHandler() {
 
   // Si es modo DINÁMICO VOXEL: Mostramos la experiencia inmersiva completa de QR Voxel Studio
   const matrix: QRMatrix = reconstructQRMatrix(record.targetUrl);
-  const homeHref = BASE_PATH ? `${BASE_PATH}/` : "/";
+  const homeHref = getRootHref();
 
   return (
     <main className={`sharedGeneratorPage theme-${activeTheme}`}>
       <header className="v15Header glassPanel sharedGeneratorHeader">
-        <Link href={homeHref} className="v15BrandBlock sharedGeneratorBrand" title="Ir a QR Voxel Studio">
+        <a href={homeHref} className="v15BrandBlock sharedGeneratorBrand" title="Ir al generador de QR Voxel Studio">
           <span className="v15AnchorBadge">
             <Image src={`${BASE_PATH}/anchor-studio.png`} alt="Ancla de QR Voxel Studio" width={58} height={58} priority />
           </span>
@@ -224,7 +224,7 @@ function RedirectHandler() {
             <strong>QR Voxel <span>Studio</span></strong>
             <small>Voxel trees, estaciones y un QR desde el cielo</small>
           </div>
-        </Link>
+        </a>
 
         <div className="v15HeaderCenter">
           <div className="v15SeasonsPill" aria-label="Estaciones del jardín interactivo">

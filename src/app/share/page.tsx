@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { getRootHref } from "@/lib/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { QRMatrixCanvas } from "@/components/qr/qr-matrix-canvas";
 import { QRForest3D } from "@/components/visual/qr-forest-3d";
@@ -156,13 +156,15 @@ export default function SharedGardenPage() {
     [matrix],
   );
 
+  const rootHref = getRootHref();
+
   if (error) {
     return (
       <main className="sharedGardenErrorPage">
         <Image src={`${BASE_PATH}/anchor-studio.png`} alt="QR Voxel Studio" width={76} height={76} />
         <h1>No pudimos abrir este jardín.</h1>
         <p>{error}</p>
-        <Link href="/">Crear un jardín nuevo</Link>
+        <a href={rootHref} className="btnPrimary glowButton">Crear un jardín nuevo</a>
       </main>
     );
   }
@@ -170,7 +172,7 @@ export default function SharedGardenPage() {
   return (
     <main className={`sharedGeneratorPage theme-${activeTheme}`}>
       <header className="v15Header glassPanel sharedGeneratorHeader">
-        <Link href="/" className="v15BrandBlock sharedGeneratorBrand">
+        <a href={rootHref} className="v15BrandBlock sharedGeneratorBrand" title="Ir al generador de QR Voxel Studio">
           <span className="v15AnchorBadge">
             <Image src={`${BASE_PATH}/anchor-studio.png`} alt="Ancla de QR Voxel Studio" width={58} height={58} priority />
           </span>
@@ -178,7 +180,7 @@ export default function SharedGardenPage() {
             <strong>QR Voxel <span>Studio</span></strong>
             <small>Voxel trees, estaciones y un QR desde el cielo</small>
           </div>
-        </Link>
+        </a>
 
         <div className="v15HeaderCenter">
           <div className="v15SeasonsPill" aria-label="Estaciones del jardín compartido">

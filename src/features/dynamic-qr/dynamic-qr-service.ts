@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc, updateDoc, increment } from "firebase/firestore";
 import { getDb, isFirebaseConfigured } from "@/lib/firebase";
 import { validateAndSanitizeUrl, sanitizePlainText } from "@/lib/security";
+import { getBasePath } from "@/lib/navigation";
 import type { DynamicQRRecord, QRExpirationOption, QRBehaviorMode, VisualProfile } from "@/models/qr-slot";
 
 const LOCAL_STORAGE_KEY = "qrvoxel_created_qrs";
@@ -259,6 +260,6 @@ export function buildRedirectUrl(id: string, record?: DynamicQRRecord): string {
     return `${cleanDomain}/r/${query}`;
   }
 
-  const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+  const basePath = getBasePath();
   return `${window.location.origin}${basePath}/r/${query}`;
 }

@@ -1,7 +1,5 @@
-"use client";
-
-import Link from "next/link";
 import Image from "next/image";
+import { getRootHref } from "@/lib/navigation";
 
 interface ExpiredQRViewProps {
   expiresAt?: number;
@@ -20,7 +18,7 @@ export function ExpiredQRView({ expiresAt, title }: ExpiredQRViewProps) {
     : "Fecha no disponible";
 
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
-  const homeHref = basePath ? `${basePath}/` : "/";
+  const homeHref = getRootHref();
 
   return (
     <main className="v15Page theme-spring expiredContainer">
@@ -30,7 +28,7 @@ export function ExpiredQRView({ expiresAt, title }: ExpiredQRViewProps) {
 
       {/* Barra superior oficial QR Voxel Studio con firma de autor Luics415 ★ */}
       <header className="v15Header glassPanel expiredHeaderBar">
-        <Link href={homeHref} className="v15BrandBlock" style={{ textDecoration: "none" }} title="Ir a QR Voxel Studio">
+        <a href={homeHref} className="v15BrandBlock" title="Ir al generador de QR Voxel Studio">
           <span className="v15AnchorBadge">
             <Image src={`${basePath}/anchor-studio.png`} alt="Ancla de QR Voxel Studio" width={74} height={74} priority />
           </span>
@@ -39,7 +37,7 @@ export function ExpiredQRView({ expiresAt, title }: ExpiredQRViewProps) {
             <strong>QR Voxel <span>Studio</span></strong>
             <small>Voxel trees, estaciones y un QR desde el cielo</small>
           </div>
-        </Link>
+        </a>
 
         <div className="v15HeaderCenter" />
 
@@ -88,9 +86,9 @@ export function ExpiredQRView({ expiresAt, title }: ExpiredQRViewProps) {
         </div>
 
         <div className="expiredActions">
-          <Link href={homeHref} className="btnPrimary glowButton">
+          <a href={homeHref} className="btnPrimary glowButton">
             <span>✨ Crear un nuevo QR Voxel</span>
-          </Link>
+          </a>
         </div>
       </section>
 
