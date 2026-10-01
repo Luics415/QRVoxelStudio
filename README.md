@@ -2,8 +2,7 @@
 
 Convierte un código QR en un jardín voxel 3D, explóralo por estaciones y compártelo desde una vista cenital precisa.
 
-[![Demo en Vercel](https://img.shields.io/badge/demo-Vercel-000000?logo=vercel)](https://qrvoxelstudio.vercel.app/)
-[![Espejo en GitHub Pages](https://img.shields.io/badge/espejo-GitHub%20Pages-24292f?logo=github)](https://luics415.github.io/QRVoxelStudio/)
+[![Demo en GitHub Pages](https://img.shields.io/badge/demo-GitHub%20Pages-24292f?logo=github)](https://luics415.github.io/QRVoxelStudio/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs)](https://nextjs.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-3D-black?logo=threedotjs)](https://threejs.org/)
 
@@ -24,7 +23,7 @@ QR Voxel Studio procesa el QR directamente en el navegador y lo transforma en un
 
 ## Demo
 
-Abre la aplicación en [Vercel (recomendado)](https://qrvoxelstudio.vercel.app/) o en el espejo de [GitHub Pages](https://luics415.github.io/QRVoxelStudio/).
+Abre la aplicación publicada en [luics415.github.io/QRVoxelStudio](https://luics415.github.io/QRVoxelStudio/).
 
 La demo incluye un QR de ejemplo. También puedes cargar un archivo propio en PNG, JPG, JPEG, WebP, SVG o BMP. EPS todavía requiere una conversión previa a SVG o PNG.
 
