@@ -108,4 +108,5 @@ La aplicación no utiliza base de datos. La imagen se procesa en el navegador y 
 
 ## Licencia
 
-Este repositorio no declara todavía una licencia de código abierto.
+Este proyecto está distribuido bajo la Licencia [MIT](LICENSE).
+
